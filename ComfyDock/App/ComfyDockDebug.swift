@@ -10,7 +10,7 @@ import Dock
 
 struct ComfyDockDebug: View {
     
-    let dock : Dock
+    let dock : DockControls
     @Bindable var dockController : DockManager
     
     var body: some View {

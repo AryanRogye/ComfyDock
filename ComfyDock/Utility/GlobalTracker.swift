@@ -15,7 +15,7 @@ public class GlobalHoverTracker {
     private var dockController : DockManager
     
     private var inside = false
-    var stripHeight: CGFloat = 60
+    var stripHeight: CGFloat = 60 - 10
     
     init(dockController : DockManager) {
         self.dockController = dockController
@@ -31,7 +31,7 @@ public class GlobalHoverTracker {
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard let lastOnChange = self.lastOnChange else { return }
-                self.stripHeight = self.dockController.height
+                self.stripHeight = max(self.dockController.height - 10, 10)
                 self.stop()
                 self.startTracking(lastOnChange)
                 self.observeHeightChanges()

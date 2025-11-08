@@ -14,11 +14,9 @@ struct ComfyDock: App {
     
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
-    let dock = Dock()
-    
     var body: some Scene {
         WindowGroup {
-            ComfyDockDebug(dock: dock, dockController: delegate.dockManager)
+            ComfyDockDebug(dock: delegate.appEnv.dockControls, dockController: delegate.appCoordinator.dockManager)
         }
     }
 }

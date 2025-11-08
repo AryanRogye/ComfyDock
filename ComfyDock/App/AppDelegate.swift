@@ -10,81 +10,30 @@ import AppKit
 import Dock
 
 struct AppEnv {
-    var dock : Dock = Dock()
-    var runningApps: RunningAppsProviding = RunningAppsService()
+    var dockControls : DockControls = DockControls()
+    var runningAppFetcher: RunningAppsProviding = RunningAppsService()
 }
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     
+    /// Coordinates what goes on in the app
+    let appCoordinator : AppCoordinator
+    
+    /// Everything the app needs to run
     let appEnv = AppEnv()
-    let dock : Dock
-    let dockManager = DockManager()
-    
-    private var permissionManager : PermissionManager?
-    
-    private var center = NSWorkspace.shared.notificationCenter
-    
-    lazy var globalTracker = GlobalHoverTracker(dockController: dockManager)
-    lazy var dockOverlayCoordinator = DockOverlayCoordinator(dock: dockManager)
     
     override init() {
-        self.dock = appEnv.dock
-        super.init()
-        refreshNow()
-        watchApps()
+        appCoordinator = AppCoordinator(appEnv: appEnv)
     }
-    
-    public func watchApps() {
-        center.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didLaunchApplicationNotification, object: nil)
-        center.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didTerminateApplicationNotification, object: nil)
-        center.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-        center.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
-        center.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didHideApplicationNotification, object: nil)
-        center.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didUnhideApplicationNotification, object: nil)
-    }
-    
-    @objc func refreshNow() {
-        self.dockManager.runningApps = appEnv.runningApps.getRunningApps()
-    }
-    
     
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        permissionManager = PermissionManager()
-        guard let permissionManager else { return }
-        
-        permissionManager.onPermissionGranted = { [weak self] in
-            self?.startApp()
-        }
-        
-        // If already have permissions, start immediately
-        if permissionManager.isAccessibilityEnabled {
-            startApp()
-        } else {
-            print("⚠️ Waiting for accessibility permissions...")
-            permissionManager.requestPermission()
-        }
+        appCoordinator.start()
     }
     
-    func startApp() {
-        dock.hideDock()
-        
-        let onChange: (Bool) -> Void = { in_radius in
-            if in_radius {
-                self.dockOverlayCoordinator.show()
-            } else {
-                if self.dockManager.isHoveringOverXcodeRects { return }
-                self.dockOverlayCoordinator.hide()
-            }
-        }
-        
-        globalTracker.lastOnChange = onChange
-        globalTracker.startTracking(onChange)
-    }
     
     public func applicationWillTerminate(_ notification: Notification) {
-        dock.showDock()
-        globalTracker.stop()
+        appCoordinator.stop()
     }
     
     public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

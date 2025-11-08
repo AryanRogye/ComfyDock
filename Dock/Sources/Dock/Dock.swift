@@ -24,7 +24,7 @@ import Foundation
  */
 
 @Observable @MainActor
-public class Dock {
+public class DockControls {
     
     var hidden = true
     
