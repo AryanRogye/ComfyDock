@@ -4,6 +4,23 @@
 //
 //  Created by Aryan Rogye on 11/8/25.
 //
+//  Summary:
+//  This file implements a parser that reads and decodes Xcode’s
+//  recent-projects list stored in the binary `.sfl4` file located at:
+//
+//  ~/Library/Application Support/com.apple.sharedfilelist/
+//  com.apple.LSSharedFileList.ApplicationRecentDocuments/
+//  com.apple.dt.xcode.sfl4
+//
+//  The parser extracts bookmark data entries, resolves them into
+//  valid file URLs, and returns an array of recent project paths.
+//
+//  Notes:
+//  - The `.sfl4` file is a keyed archive (binary property list).
+//  - Access may require Full Disk Access permissions.
+//  - This utility is for debugging and educational use only.
+//
+
 
 #include "ParserCore.h"
 

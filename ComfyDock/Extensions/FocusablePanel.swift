@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import SwiftUI
 
 /**
  * Custom NSPanel subclass that can become key and main window.

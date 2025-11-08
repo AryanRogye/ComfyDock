@@ -18,7 +18,7 @@ struct ComfyDock: App {
     
     var body: some Scene {
         WindowGroup {
-            ComfyDockDebug(dock: dock, dockController: delegate.dockController)
+            ComfyDockDebug(dock: dock, dockController: delegate.dockManager)
         }
     }
 }

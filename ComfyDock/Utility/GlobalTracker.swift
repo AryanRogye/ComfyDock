@@ -73,7 +73,9 @@ public class GlobalHoverTracker {
     
     func stop() {
         if let m = gloablMonitor { NSEvent.removeMonitor(m) }
+        if let l = localMonitor  { NSEvent.removeMonitor(l) }
         gloablMonitor = nil
+        localMonitor = nil
         inside = false
     }
 }

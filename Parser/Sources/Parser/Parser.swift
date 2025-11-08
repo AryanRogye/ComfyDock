@@ -12,17 +12,13 @@ public class XcodeParser {
         self.parserCore = ParserCore()
     }
     
-    public func parse() {
-        guard let parserCore = parserCore else { return }
+    public func parse() -> [URL]? {
+        guard let parserCore = parserCore else { return nil }
         
         guard let urls = parserCore.getXcodeItems() as? [URL] else {
             print("Failed to get Xcode items")
-            return
+            return nil
         }
-        
-        print("IN SWIFT")
-        for url in urls {
-            print(url)
-        }
+        return urls
     }
 }

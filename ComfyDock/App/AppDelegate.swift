@@ -19,14 +19,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     let appEnv = AppEnv()
     let dock : Dock
-    let dockController = DockManager()
+    let dockManager = DockManager()
     
     private var permissionManager : PermissionManager?
     
     private var center = NSWorkspace.shared.notificationCenter
     
-    lazy var globalTracker = GlobalHoverTracker(dockController: dockController)
-    lazy var dockOverlayCoordinator = DockOverlayCoordinator(dock: dockController)
+    lazy var globalTracker = GlobalHoverTracker(dockController: dockManager)
+    lazy var dockOverlayCoordinator = DockOverlayCoordinator(dock: dockManager)
     
     override init() {
         self.dock = appEnv.dock
@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func refreshNow() {
-        self.dockController.runningApps = appEnv.runningApps.getRunningApps()
+        self.dockManager.runningApps = appEnv.runningApps.getRunningApps()
     }
     
     
@@ -73,6 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if in_radius {
                 self.dockOverlayCoordinator.show()
             } else {
+                if self.dockManager.isHoveringOverXcodeRects { return }
                 self.dockOverlayCoordinator.hide()
             }
         }

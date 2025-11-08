@@ -26,64 +26,82 @@ final class DockOverlayCoordinator: NSObject {
     // MARK: - Public API
     func show() {
         guard let panel = panel else { createPanel(); return show() }
-        let vf = NSScreen.main!.visibleFrame
-        let final = currentFrame()
-        let start = CGRect(x: vf.minX, y: vf.minY, width: vf.width, height: 0)
+        let final = currentFrame()                 // <- your target rect (uses dock.height)
+        var start = final
+        start.size.height = 0                      // slide up from bottom
         
-        panel.alphaValue = 1
+        panel.animationBehavior = .none
+        panel.alphaValue = 0
         panel.setFrame(start, display: true)
         panel.orderFrontRegardless()
         
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.2
+            ctx.duration = 0.22
             ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             panel.animator().setFrame(final, display: true)
+            panel.animator().alphaValue = 1
+        } completionHandler: {
+            self.syncContentSize()
         }
     }
     
     func hide() {
-        guard let panel else { return }
-        let vf = NSScreen.main!.visibleFrame
-        let down = CGRect(x: vf.minX, y: vf.minY, width: vf.width, height: 0)
+        guard let panel = panel else { return }
+        let final = currentFrame()
+        var down = final
+        down.size.height = 0
         
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.16
+            ctx.duration = 0.18
             ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             panel.animator().setFrame(down, display: true)
-            panel.animator().alphaValue = 0.98 // optional slight fade
+            panel.animator().alphaValue = 0
         } completionHandler: {
             panel.orderOut(nil)
             panel.alphaValue = 1
         }
     }
     
+    private func syncContentSize() {
+        guard let panel = panel else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true) // avoid layer “stretch” flicker
+        panel.contentView?.frame = CGRect(origin: .zero, size: panel.contentRect(forFrameRect: panel.frame).size)
+        panel.contentView?.layoutSubtreeIfNeeded()
+        CATransaction.commit()
+    }
+    
     // MARK: - Core
     private func createPanel() {
-        let rect = currentFrame()
-        let p = NSPanel(
-            contentRect: rect,
+        let p = FocusablePanel(
+            contentRect: currentFrame(),
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
+        p.setFrame(currentFrame(), display: true)
+        
+        p.contentView?.wantsLayer = true
+        p.acceptsMouseMovedEvents = true
+        
+        let overlayRaw = CGWindowLevelForKey(.overlayWindow)
+        p.level = NSWindow.Level(rawValue: Int(overlayRaw))
+        
+        p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        p.isMovableByWindowBackground = false
+        
+        p.backgroundColor = .clear
         p.isOpaque = false
         p.hasShadow = false
-        p.backgroundColor = .clear
-        p.ignoresMouseEvents = false
-        p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        p.level = .statusBar   // above normal windows; use .screenSaver to be “always on top” (aggressive)
         
-        // your SwiftUI content here
-        let content = AnyView(DockView(dock: dock))
+        let view : NSView = NSHostingView(rootView: DockView(dock: dock))
         
-        let hv = NSHostingView(rootView: content)
-        hv.wantsLayer = true
-        hv.layer?.masksToBounds = true
-        hv.layer?.cornerRadius = 10
-        p.contentView = hv
+        view.wantsLayer = true
+        view.layer?.masksToBounds = true
+        
+        p.contentView = view
         
         self.panel = p
-        self.host = hv
     }
     
     private func relayout(animated: Bool = true) {
@@ -99,10 +117,7 @@ final class DockOverlayCoordinator: NSObject {
     
     private func currentFrame() -> CGRect {
         guard let screen = NSScreen.main else { return .zero }
-        let vf = screen.visibleFrame
-        let bottomPadding = dock.paddingFromBottom
-        let h = max(0, min(dock.height, vf.height))
-        return CGRect(x: vf.minX, y: vf.minY + bottomPadding, width: vf.width, height: h)
+        return screen.frame
     }
     
     // Re-armable Observation so height changes keep updating the panel
@@ -119,3 +134,4 @@ final class DockOverlayCoordinator: NSObject {
         )
     }
 }
+
