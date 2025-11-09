@@ -11,8 +11,11 @@ struct AudioControls: View {
     
     
     @Bindable var audioManager : AudioManager
-    private let iconWidth: CGFloat = 7
-    private let iconHeight: CGFloat = 8
+    private let iconWidth: CGFloat = 8
+    private let iconHeight: CGFloat = 9
+    
+    private let buttonWidth : CGFloat = 25
+    private let buttonHeight: CGFloat = 15
     private let iconPadding: CGFloat = 15
     
     var body: some View {
@@ -25,9 +28,11 @@ struct AudioControls: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconWidth, height: iconHeight)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
-            .buttonStyle(MusicControlButton(size: iconPadding, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
+            .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
+            
+            Spacer()
             
             Button(action: {
                 audioManager.togglePlayPause()
@@ -37,10 +42,12 @@ struct AudioControls: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconWidth, height: iconHeight)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
-            .buttonStyle(MusicControlButton(size: iconPadding, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
+            .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
             
+            Spacer()
+
             Button(action: {
                 audioManager.playNextTrack()
             }) {
@@ -49,9 +56,10 @@ struct AudioControls: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconWidth, height: iconHeight)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
-            .buttonStyle(MusicControlButton(size: iconPadding, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
+            .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
         }
+        .padding(.horizontal)
     }
 }

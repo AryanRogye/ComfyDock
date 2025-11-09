@@ -22,7 +22,7 @@ struct AudioSlider: View {
         HStack(alignment: .center, spacing: 4) {
             Text(formatDuration(audioManager.nowPlayingInfo.positionSeconds))
                 .font(.system(size: 8, weight: .medium, design: .default))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(.primary.opacity(0.7))
                 .frame(maxHeight: .infinity, alignment: .top)
                 .padding(.top, 2)
             
@@ -79,16 +79,20 @@ struct AudioSlider: View {
                     }
                 }
             }
-            .padding(.horizontal, 4)
-            .padding(.top, 2)
+            .padding(.horizontal, 2)
+            .padding(.top, 4)
             
             // Time labels
             Text(formatDuration(audioManager.nowPlayingInfo.durationSeconds))
                 .font(.system(size: 8, weight: .medium, design: .default))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(.primary.opacity(0.7))
                 .frame(maxHeight: .infinity, alignment: .top)
                 .padding(.top, 2)
         }
+        .shadow(
+            color: Color(nsColor: audioManager.nowPlayingInfo.dominantColor).opacity(0.6),
+            radius: 3, x: 0, y: 0
+        )
     }
     
     // Helper function to format seconds as "MM:SS"

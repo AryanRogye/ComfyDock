@@ -22,7 +22,14 @@ struct AlbumCover: View {
     }
     
     var height : CGFloat {
-        dockManager.height
+        dockManager.height - 10
+    }
+    var width : CGFloat {
+        dockManager.height - 10
+    }
+    
+    var shadowColor : Color {
+        Color(nsColor: audioManager.nowPlayingInfo.dominantColor)
     }
 
     var body: some View {
@@ -31,9 +38,11 @@ struct AlbumCover: View {
                 if let cachedArtwork = cachedArtwork {
                     renderImage(for: cachedArtwork)
                         .opacity(isFrontSide ? 1 : 0)
+                        .shadow(color: shadowColor, radius: 2)
                 } else {
                     placeholderAlbumCover
                         .opacity(isFrontSide ? 1 : 0)
+                        .shadow(color: shadowColor, radius: 2)
                 }
                 
                 // Back side (new image) - visible at 180°
@@ -53,32 +62,11 @@ struct AlbumCover: View {
         }
     }
     
-    // MARK: - Handle 180° Flip with Two-Sided Card
-    private func handleArtworkFlip(newArtwork: NSImage?) {
-        // Only flip if artwork actually changed
-        guard cachedArtwork != newArtwork else { return }
-        
-        // Start the 180° flip (0° to 180°)
-        
-        withAnimation(.easeInOut(duration: flipDuration)) {
-            flipRotation = 180
-        }
-        
-        // After flip completes, reset for next flip and update cache
-        DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration) {
-            // Reset rotation back to 0° without animation
-            flipRotation = 0
-            // The new image becomes the cached "front" for next flip
-            cachedArtwork = newArtwork
-        }
-    }
-    
-    
     private func renderImage(for nsImage: NSImage) -> some View {
         return Image(nsImage: nsImage)
             .resizable()
             .aspectRatio(contentMode: .fill)
-            .frame(width: height - 5, height: height - 5)
+            .frame(width: width, height: height)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -109,7 +97,27 @@ struct AlbumCover: View {
                 .font(.system(size: 32, weight: .light))
                 .foregroundColor(.white.opacity(0.5))
         }
-        .frame(width: height - 5, height: height - 5)
+        .frame(width: width, height: height)
         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+    }
+    
+    // MARK: - Handle 180° Flip with Two-Sided Card
+    private func handleArtworkFlip(newArtwork: NSImage?) {
+        // Only flip if artwork actually changed
+        guard cachedArtwork != newArtwork else { return }
+        
+        // Start the 180° flip (0° to 180°)
+        
+        withAnimation(.easeInOut(duration: flipDuration)) {
+            flipRotation = 180
+        }
+        
+        // After flip completes, reset for next flip and update cache
+        DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration) {
+            // Reset rotation back to 0° without animation
+            flipRotation = 0
+            // The new image becomes the cached "front" for next flip
+            cachedArtwork = newArtwork
+        }
     }
 }

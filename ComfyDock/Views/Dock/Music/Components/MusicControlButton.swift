@@ -9,18 +9,21 @@ import SwiftUI
 
 struct MusicControlButton: ButtonStyle {
     
-    let size: CGFloat
+    let width  : CGFloat
+    let height : CGFloat
     let tintColor: NSColor
     
-    init(size: CGFloat = 32, tint: NSColor = .white) {
-        self.size = size
+    init(width: CGFloat, height: CGFloat, tint: NSColor = .white) {
+        self.width = width
+        self.height = height
         self.tintColor = tint
     }
     
     func makeBody(configuration: Configuration) -> some View {
         MusicControlButtonView(
             isPressed: configuration.isPressed,
-            size: size,
+            width: width,
+            height: height,
             tintColor: Color(tintColor)
         ) {
             configuration.label
@@ -30,14 +33,15 @@ struct MusicControlButton: ButtonStyle {
     struct MusicControlButtonView<Label: View>: View {
         @State private var isHovering = false
         let isPressed: Bool
-        let size: CGFloat
+        let width: CGFloat
+        let height: CGFloat
         let tintColor: Color
         let label: () -> Label
         
         var body: some View {
             ZStack {
                 if isHovering {
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: 6)
                         .fill(
                             LinearGradient(
                                 colors: [
@@ -49,7 +53,7 @@ struct MusicControlButton: ButtonStyle {
                             )
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: 6)
                                 .stroke(tintColor.opacity(0.25), lineWidth: 1)
                         )
                         .scaleEffect(isPressed ? 0.95 : (isHovering ? 1.05 : 1.0))
@@ -64,7 +68,7 @@ struct MusicControlButton: ButtonStyle {
                     .foregroundColor(.white)
                     .scaleEffect(isPressed ? 0.9 : 1.0)
             }
-            .frame(width: size, height: size)
+            .frame(width: width, height: height)
             .animation(.easeInOut(duration: 0.2), value: isHovering)
             .animation(.easeInOut(duration: 0.1), value: isPressed)
             .onHover { hovering in
