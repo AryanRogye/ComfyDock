@@ -197,7 +197,7 @@ final class AppleScriptMusicController : NowPlayingController {
         _ dominantColorChanged: @escaping (NSColor) -> Void,
         _ positionSecondsChanged : @escaping (Double) -> Void,
         _ durationSecondsChanged : @escaping (Double) -> Void,
-        _ isPlayingAudioChanged  : @escaping (Bool) -> Void,
+        _ isPlayingAudioChanged  : @escaping (Bool) -> Void
     ) {
         let (trackName, artistName, albumName, artworkImage, positionSeconds, durationSeconds) = info
         let currentTrackIdentifier = "\(trackName)|\(artistName)|\(albumName)|"
