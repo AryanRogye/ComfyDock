@@ -17,11 +17,12 @@ final class AppCoordinator {
 
     /// Managers
     let dockManager         : DockManager
+    let audioManager        : AudioManager
     let permissionManager   : PermissionManager
     
     
     /// Coorinatonrs
-    lazy var dockOverlayCoordinator = DockOverlayCoordinator(dock: dockManager)
+    lazy var dockOverlayCoordinator = DockOverlayCoordinator(dockManager: dockManager, audioManager: audioManager)
 
     init(appEnv : AppEnv) {
         /// Initialize Services
@@ -30,6 +31,7 @@ final class AppCoordinator {
 
         /// Initialize Managers
         self.dockManager = DockManager()
+        self.audioManager = AudioManager()
         self.permissionManager = PermissionManager()
         
         

@@ -10,13 +10,14 @@ import SwiftUI
 
 final class DockOverlayCoordinator: NSObject {
     
-    var dock: DockManager
+    var dockManager: DockManager
+    var audioManager : AudioManager
     private var panel: NSPanel?
     private var host: NSHostingView<AnyView>?
     
-    
-    init(dock: DockManager) {
-        self.dock = dock
+    init(dockManager: DockManager, audioManager: AudioManager) {
+        self.dockManager = dockManager
+        self.audioManager = audioManager
         super.init()
         
         createPanel()
@@ -94,7 +95,7 @@ final class DockOverlayCoordinator: NSObject {
         p.isOpaque = false
         p.hasShadow = false
         
-        let view : NSView = NSHostingView(rootView: DockView(dock: dock))
+        let view : NSView = NSHostingView(rootView: DockView(dockManager: dockManager, audioManager: audioManager))
         
         view.wantsLayer = true
         view.layer?.masksToBounds = true
@@ -123,11 +124,11 @@ final class DockOverlayCoordinator: NSObject {
     // Re-armable Observation so height changes keep updating the panel
     private func armObservation() {
         withObservationTracking(
-            { _ = dock.height; _ = dock.isVisible },
+            { _ = dockManager.height; _ = dockManager.isVisible },
             onChange: { [weak self] in
                 guard let self else { return }
                 DispatchQueue.main.async {
-                    if self.dock.isVisible { self.show(); self.relayout() } else { self.hide() }
+                    if self.dockManager.isVisible { self.show(); self.relayout() } else { self.hide() }
                     self.armObservation()
                 }
             }
