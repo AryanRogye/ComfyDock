@@ -39,14 +39,14 @@ struct MusicControlButton: ButtonStyle {
         let label: () -> Label
         
         var body: some View {
-            ZStack {
+            ZStack(alignment: .center) {
                 if isHovering {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    tintColor.opacity(isHovering ? 0.25 : 0.15),
-                                    tintColor.opacity(isHovering ? 0.15 : 0.05)
+                                    tintColor.opacity(isHovering ? 0.15 : 0.05),
+                                    tintColor.opacity(isHovering ? 0.05 : 0.15)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -54,7 +54,7 @@ struct MusicControlButton: ButtonStyle {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(tintColor.opacity(0.25), lineWidth: 1)
+                                .stroke(tintColor.opacity(0.1), lineWidth: 1)
                         )
                         .scaleEffect(isPressed ? 0.95 : (isHovering ? 1.05 : 1.0))
                         .shadow(
