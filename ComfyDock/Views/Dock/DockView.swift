@@ -36,14 +36,6 @@ struct BottomDock: View {
             DockMusic(dockManager: dockManager, audioManager: audioManager)
         }
     }
-    
-
-
-    
-    
-
-    
-    
 
 //                        .contextMenu {
 //                            //                            ZStack {

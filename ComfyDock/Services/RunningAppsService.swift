@@ -36,18 +36,35 @@ struct RunningApp: Hashable, Identifiable {
             return
         }
 
+        if runningApp.isTerminated {
+            log("app is terminated, launching instead")
+            launchApp()
+            return
+        }
+
         if runningApp.isHidden {
             log("app is hidden, calling unhide()")
             runningApp.unhide()
         }
 
-        var options: NSApplication.ActivationOptions = [.activateIgnoringOtherApps]
+        var options: NSApplication.ActivationOptions = []
         if #available(macOS 13.0, *) {
             options.insert(.activateAllWindows)
+        }
+        if #available(macOS 14.0, *) {
+            // kAXActivateIgnoringOtherApps has no effect
+        } else {
+            options.insert(.activateIgnoringOtherApps)
         }
 
         let didActivate = runningApp.activate(options: options)
         log("activate(options: \(options.rawValue)) -> \(didActivate)")
+        if !didActivate {
+            log("activation failed, falling back to launch()")
+            launchApp()
+            return
+        }
+
         focusFrontWindow(for: runningApp.processIdentifier)
     }
 
@@ -59,8 +76,9 @@ struct RunningApp: Hashable, Identifiable {
         var targetWindow = axElement
         let appElement = AXUIElementCreateApplication(pid)
         var didFocus = false
+        let attempts = 4
 
-        for attempt in 0..<4 {
+        for attempt in 0..<attempts {
             let delay = DispatchTime.now() + .milliseconds(100 + attempt * 80)
             DispatchQueue.main.asyncAfter(deadline: delay) {
                 guard !didFocus else { return }
@@ -95,6 +113,27 @@ struct RunningApp: Hashable, Identifiable {
                     targetWindow = nil
                 }
             }
+        }
+
+        let fallbackDelay = DispatchTime.now() + .milliseconds(100 + (attempts - 1) * 80 + 200)
+        DispatchQueue.main.asyncAfter(deadline: fallbackDelay) {
+            guard !didFocus else { return }
+            didFocus = true
+
+            if let app = NSRunningApplication(processIdentifier: pid) {
+                if app.isTerminated {
+                    self.log("app terminated before focus, launching instead")
+                    self.launchApp()
+                    return
+                }
+            } else {
+                self.log("process disappeared, launching instead")
+                self.launchApp()
+                return
+            }
+
+            self.log("no focusable window detected, launching instead")
+            self.launchApp()
         }
     }
 
