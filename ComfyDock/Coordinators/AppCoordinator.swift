@@ -20,6 +20,7 @@ final class AppCoordinator {
     let audioManager        : AudioManager
     let permissionManager   : PermissionManager
     
+    private var lastWasIn: Bool = false
     
     /// Coorinatonrs
     lazy var dockOverlayCoordinator = DockOverlayCoordinator(dockManager: dockManager, audioManager: audioManager)
@@ -59,25 +60,38 @@ final class AppCoordinator {
     }
     
     func startApp() {
+        observeContextMenuDismissal()
         dockControls.hideDock()
         
         let onChange: (Bool) -> Void = { in_radius in
+            self.lastWasIn = in_radius
             if in_radius {
                 self.dockOverlayCoordinator.show()
             } else {
-                if self.dockManager.isHoveringOverXcodeRects { return }
-                self.dockOverlayCoordinator.hide()
+                /// If No App Is getting right clicked
+                if self.dockManager.rightClickApp == nil {
+                    self.dockOverlayCoordinator.hide()
+                }
             }
         }
         
+        /**
+         * This is useful for re-triggering the tracker
+         * Would only be called on observation
+         */
         globalTracker.lastOnChange = onChange
         globalTracker.startTracking(onChange)
     }
+    
 }
 
 
 // MARK: - Observing
 extension AppCoordinator {
+    
+    /**
+     * System Notifications for "Refreshing Our Internal, Dock"
+     */
     public func watchApps() {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didLaunchApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(refreshNow), name: NSWorkspace.didTerminateApplicationNotification, object: nil)
@@ -89,5 +103,28 @@ extension AppCoordinator {
     
     @objc func refreshNow() {
         self.dockManager.runningApps = runningAppsFetcher.getRunningApps()
+    }
+    
+    /**
+     * This Configuration is very important, when we right click a app, it will
+     * show something, when that app is set back to nil, our mouse might be "off"
+     * of the set strip in the global tracker, that means we can just hide the dock
+     * This is dependent, on OnChange setting the lastWasIn property in `startApp()`
+     */
+    func observeContextMenuDismissal() {
+        withObservationTracking {
+            _ = dockManager.rightClickApp
+        } onChange: {
+            DispatchQueue.main.async {
+                if self.dockManager.rightClickApp == nil {
+                    print("Right Click App Set Nil")
+                    /// check if the last was a false
+                    if !self.lastWasIn {
+                        self.dockOverlayCoordinator.hide()
+                    }
+                }
+                self.observeContextMenuDismissal()
+            }
+        }
     }
 }

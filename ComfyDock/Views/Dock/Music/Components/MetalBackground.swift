@@ -122,6 +122,7 @@ struct MetalBackground: NSViewRepresentable {
         context.coordinator.targetView = mtkView
         context.coordinator.audioManager = audioManager
         context.coordinator.metalAnimationState = metalAnimationState
+        context.coordinator.observeBlurProgress()
         return mtkView
     }
     
@@ -135,16 +136,15 @@ struct MetalBackground: NSViewRepresentable {
         private var commandQueue: MTLCommandQueue!
         private var vertexBuffer: MTLBuffer!
         
-        private var blurProgress: Float = 1.0
+        private var blurProgress: Float = 0.0
         private var animationName: String = "ambientGradient"
         
         override init() {
             super.init()
             setupMetal()
-            observeBlurProgress()
         }
         
-        private func observeBlurProgress() {
+        public func observeBlurProgress() {
             
             withObservationTracking {
                 _ = metalAnimationState?.blurProgress
@@ -153,7 +153,7 @@ struct MetalBackground: NSViewRepresentable {
                 DispatchQueue.main.async {
                     guard let animation = self.metalAnimationState else { return }
                     self.blurProgress = animation.blurProgress
-                    print("Updating Blur Progress")
+                    print("Updating Blur Progress: \(self.blurProgress)")
                     self.observeBlurProgress()
                 }
             }

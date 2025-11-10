@@ -35,7 +35,8 @@ struct BottomDock: View {
             DockApps(dockManager: dockManager)
             DockMusic(dockManager: dockManager, audioManager: audioManager)
         }
+        .contextMenu {
+            Button("Quit") { NSApp.terminate(self) }
+        }
     }
 }
-
-

@@ -94,7 +94,6 @@ final class AppleScriptMusicController : NowPlayingController {
             
             /// IF NOTHING IS PLAYING
             if !is_spotify_playing && !is_apple_music_playing {
-                print("NOTHING IS PLAYING")
                 DispatchQueue.main.async {
                     
                     self.clearNowPlayingInfo(
@@ -117,7 +116,6 @@ final class AppleScriptMusicController : NowPlayingController {
             
             /// SPOTIFY IS PLAYING
             if is_spotify_playing {
-                print("SPOTIFY PLAYING")
                 getSpotifyInfo { info in
                     DispatchQueue.main.async {
                         if let info = info {
@@ -153,7 +151,6 @@ final class AppleScriptMusicController : NowPlayingController {
             
             // If Apple Music is playing
             if is_apple_music_playing {
-                print("APPLE MUSIC PLAYING")
                 DispatchQueue.main.async {
                     if let info = self.getMusicInfo() {
                         self.updateNowPlaying(

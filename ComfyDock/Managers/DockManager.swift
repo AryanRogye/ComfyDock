@@ -14,5 +14,5 @@ public class DockManager {
     var isVisible = true
     
     var runningApps : [RunningApp] = []
-    var isHoveringOverXcodeRects = false
+    var rightClickApp: RunningApp? = nil
 }

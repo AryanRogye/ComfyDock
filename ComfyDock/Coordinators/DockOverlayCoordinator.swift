@@ -42,7 +42,10 @@ final class DockOverlayCoordinator: NSObject {
             panel.animator().setFrame(final, display: true)
             panel.animator().alphaValue = 1
         } completionHandler: {
-            self.syncContentSize()
+            DispatchQueue.main.async {
+                self.dockManager.isVisible = true
+                self.syncContentSize()
+            }
         }
     }
     
@@ -58,8 +61,11 @@ final class DockOverlayCoordinator: NSObject {
             panel.animator().setFrame(down, display: true)
             panel.animator().alphaValue = 0
         } completionHandler: {
-            panel.orderOut(nil)
-            panel.alphaValue = 1
+            DispatchQueue.main.async {
+                panel.orderOut(nil)
+                panel.alphaValue = 1
+                self.dockManager.isVisible = false
+            }
         }
     }
     

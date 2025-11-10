@@ -29,6 +29,42 @@ struct RunningApp: Hashable, Identifiable {
         }
     }
 
+    public func quitApp() {
+        log("quitApp() called (onMainThread=\(Thread.isMainThread))")
+
+        let quitWork = {
+            self.performQuit()
+        }
+
+        if Thread.isMainThread {
+            quitWork()
+        } else {
+            DispatchQueue.main.async(execute: quitWork)
+        }
+    }
+
+    private func performQuit() {
+        guard let runningApp = NSRunningApplication(processIdentifier: id) else {
+            log("NSRunningApplication not found, cannot quit")
+            return
+        }
+
+        if runningApp.isTerminated {
+            log("app is already terminated")
+            return
+        }
+
+        // Try graceful termination first
+        let didTerminate = runningApp.terminate()
+        log("terminate() -> \(didTerminate)")
+
+        if !didTerminate {
+            log("graceful termination failed, forcing quit")
+            let didForce = runningApp.forceTerminate()
+            log("forceTerminate() -> \(didForce)")
+        }
+    }
+
     private func performActivation() {
         guard let runningApp = NSRunningApplication(processIdentifier: id) else {
             log("NSRunningApplication missing, launching instead")

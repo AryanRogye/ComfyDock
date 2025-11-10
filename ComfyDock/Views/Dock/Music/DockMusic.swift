@@ -39,25 +39,43 @@ struct DockMusic: View {
 
         .background {
             ZStack {
-
-                VisualEffectView(material: .hudWindow)
-                    .clipShape(
-                        RoundedRectangle(cornerRadius: 12)
-                    )
-
-                MetalBackground(audioManager: audioManager, metalAnimationState: metalAnimationState)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .opacity(0.5)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12))
+                
+                if dockManager.isVisible {
+                    MetalBackground(audioManager: audioManager, metalAnimationState: metalAnimationState)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
             }
         }
-
         .frame(maxHeight: dockManager.height)
         .padding(.bottom, dockManager.paddingFromBottom)
         .frame(maxWidth: 250)
+        .onChange(of: dockManager.isVisible) {
+            handleBlurringBackground()
+        }
+        .onChange(of: audioManager.nowPlayingInfo.isPlaying) {
+            handleBlurringBackground()
+        }
+    }
+    
+    
+    var shouldBlur : Bool {
+        dockManager.isVisible && audioManager.nowPlayingInfo.isPlaying
+    }
+    
+    func handleBlurringBackground() {
+        metalAnimationState.animateBlurProgress(
+            /// if open then blur to 1, if its closed then blur to 0
+            to: shouldBlur ? 1.0 : 0.0,
+            /// if open then take 2 seconds to blur, if closed then take 0.5 seconds to unblur
+            duration: shouldBlur ? 2 : 0.5
+        )
     }
 
     private func renderSongInformation() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: -1) {
             Text(audioManager.nowPlayingInfo.trackName)
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundColor(.primary)

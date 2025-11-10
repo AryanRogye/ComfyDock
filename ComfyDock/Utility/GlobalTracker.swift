@@ -15,7 +15,7 @@ public class GlobalHoverTracker {
     private var dockController : DockManager
     
     private var inside = false
-    var stripHeight: CGFloat = 60 - 10
+    var stripHeight: CGFloat = 60
     
     /// Delay before considering the pointer "inside" when entering the strip.
     /// Set to 0 for immediate show. Exit remains instant regardless of this value.
@@ -37,7 +37,7 @@ public class GlobalHoverTracker {
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard let lastOnChange = self.lastOnChange else { return }
-                self.stripHeight = max(self.dockController.height - 10, 10)
+                self.stripHeight = self.dockController.height
                 self.stop()
                 self.startTracking(lastOnChange)
                 self.observeHeightChanges()

@@ -16,7 +16,7 @@ struct ComfyDock: App {
     
     var body: some Scene {
         WindowGroup {
-            ComfyDockDebug(dock: delegate.appEnv.dockControls, dockController: delegate.appCoordinator.dockManager)
+            EmptyView().destroyViewWindow()
         }
     }
 }
