@@ -122,10 +122,14 @@ extension AppCoordinator {
                     print("Right Click App Set Nil")
                     /// check if the last was a false
                     /// Get A Instant Value
-                    if self.globalTracker.isMouseInZoneInstantaneously() {
-                        self.dockOverlayCoordinator.show()
-                    } else {
-                        self.dockOverlayCoordinator.hide()
+                    
+                    let insideNow = self.globalTracker.isMouseInZoneInstantaneously()
+                    if insideNow != self.lastWasIn {
+                        if insideNow {
+                            self.dockOverlayCoordinator.show()
+                        } else {
+                            self.dockOverlayCoordinator.hide()
+                        }
                     }
                 }
                 self.observeContextMenuDismissal()
