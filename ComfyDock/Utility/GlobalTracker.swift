@@ -60,6 +60,18 @@ public class GlobalHoverTracker {
         })
     }
     
+    @MainActor
+    public func isMouseInZoneInstantaneously() -> Bool {
+        let mouse = NSEvent.mouseLocation
+        // Use the screen the cursor is actually on (multi-monitor safe)
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) else { return false }
+        let strip = CGRect(x: screen.frame.minX,
+                           y: screen.frame.minY,
+                           width: screen.frame.width,
+                           height: stripHeight)
+        return strip.contains(mouse)
+    }
+    
     private func handleEvent(onChange: @escaping (Bool) -> Void) {
         let mouse = NSEvent.mouseLocation
         guard let screen = NSScreen.main else { return }

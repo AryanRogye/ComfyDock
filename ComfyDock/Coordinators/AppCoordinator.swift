@@ -66,7 +66,9 @@ final class AppCoordinator {
         let onChange: (Bool) -> Void = { in_radius in
             self.lastWasIn = in_radius
             if in_radius {
-                self.dockOverlayCoordinator.show()
+                if self.dockManager.rightClickApp == nil {
+                    self.dockOverlayCoordinator.show()
+                }
             } else {
                 /// If No App Is getting right clicked
                 if self.dockManager.rightClickApp == nil {
@@ -119,7 +121,10 @@ extension AppCoordinator {
                 if self.dockManager.rightClickApp == nil {
                     print("Right Click App Set Nil")
                     /// check if the last was a false
-                    if !self.lastWasIn {
+                    /// Get A Instant Value
+                    if self.globalTracker.isMouseInZoneInstantaneously() {
+                        self.dockOverlayCoordinator.show()
+                    } else {
                         self.dockOverlayCoordinator.hide()
                     }
                 }

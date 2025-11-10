@@ -27,6 +27,7 @@ struct ContextPanel: View {
         VStack(alignment: .leading, spacing: 2) {
             if app.name == "Xcode" {
                 if let xcodeRecentProjects {
+
                     ForEach(xcodeRecentProjects, id: \.self) { url in
                         Menu {
                             Button("Open") { NSWorkspace.shared.open(url) }
@@ -40,27 +41,21 @@ struct ContextPanel: View {
                             HStack {
                                 Text(url.lastPathComponent)
                                     .font(.system(size: 13))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 10, weight: .semibold))
                                     .foregroundColor(.secondary)
                             }
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
                             .contentShape(Rectangle())
-                        }
-                        .menuStyle(.borderlessButton)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .frame(minWidth: 200)
-
-                        if url != xcodeRecentProjects.last {
-                            Divider()
-                                .padding(.horizontal, 4)
                         }
                     }
                 }
             } else {
-                // Generic options for other apps
                 Button("Quit \(app.name)") {
                     app.quitApp()
                 }
@@ -70,6 +65,8 @@ struct ContextPanel: View {
             }
         }
         .padding(.vertical, 4)
+        .frame(minWidth: 260, alignment: .leading)
+        .menuStyle(BorderlessButtonMenuStyle())
         .background {
             RoundedRectangle(cornerRadius: 6)
                 .fill(.regularMaterial)
@@ -79,9 +76,9 @@ struct ContextPanel: View {
             RoundedRectangle(cornerRadius: 6)
                 .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
         }
-        .onHover { hovering in
-            self.hovering = hovering
-        }
+//        .onHover { hovering in
+//            self.hovering = hovering
+//        }
         .onAppear {
             xcodeRecentProjects = parser.parse()
         }

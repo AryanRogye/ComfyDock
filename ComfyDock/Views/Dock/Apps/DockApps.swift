@@ -35,6 +35,7 @@ struct DockApps: View {
     }
 
 
+    @State private var xcodeRecentProjects: [URL]? = nil
     @State private var hoverIcon: Bool = false
     @State private var hoverPanel: Bool = false
     @State private var contextPanelSize: CGSize = .zero
@@ -55,30 +56,39 @@ struct DockApps: View {
                             .animation(.spring, value: dockManager.rightClickApp)
                     }
                     .buttonStyle(.plain)
-                    .onRightClick { _, _ in
-                        dockManager.rightClickApp = app
-                    }
                     // Keep anchor preference for potential future manual layout (not used with popover)
                     .anchorPreference(key: AppAnchorKey.self, value: .bounds) { [app: $0] }
                     // System popover for automatic positioning & arrow per Apple guidelines
-                    .popover(
-                        isPresented: Binding(
-                            get: { dockManager.rightClickApp == app },
-                            set: { if !$0 { dockManager.rightClickApp = nil } }
-                        ),
-                        attachmentAnchor: .rect(.bounds),
-                        arrowEdge: .bottom
-                    ) {
-                        ContextPanel(
-                            app: app,
-                            isOpen: Binding(
-                                get: { dockManager.rightClickApp != nil },
-                                set: { if !$0 { dockManager.rightClickApp = nil } }
-                            ),
-                            hovering: $hoverPanel
-                        )
-                        .onChange(of: hoverPanel) { maybeClose() }
-                        s
+                    .contextMenu {
+                            Button("Quit \(app.name)") { app.quitApp() }
+                            .onAppear {
+                                print("DOCK RIGHT CLICK SET")
+                                self.dockManager.rightClickApp = app
+                            }
+                            .onDisappear {
+                                print("DOCK RIGHT CLICK CLEARED")
+                                self.dockManager.rightClickApp = nil
+                            }
+                        if app.name == "Xcode" {
+                            Divider()
+                                .onAppear {
+                                    xcodeRecentProjects = parser.parse()
+                                }
+                            if let xcodeRecentProjects {
+                                ForEach(xcodeRecentProjects, id: \.self) { project in
+                                    Label {
+                                        Text(project.lastPathComponent)
+                                            .font(.system(size: 13))
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                    } icon: {
+                                        Image(systemName: "folder.fill")
+                                            .symbolRenderingMode(.hierarchical)
+                                            .foregroundStyle(.tint)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
