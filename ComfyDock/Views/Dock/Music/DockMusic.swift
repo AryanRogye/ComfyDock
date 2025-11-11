@@ -13,13 +13,18 @@ struct DockMusic: View {
     @Bindable var audioManager : AudioManager
 
     @State var metalAnimationState = MetalAnimationState()
+    
+    var height : CGFloat {
+        let height = dockManager.height
+        return dockManager.hoveringOverMusicPlayer ? height + 10 : height
+    }
+    @State private var hoverTask: DispatchWorkItem?
 
     var body: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .center) {
 
             AlbumCover(dockManager: dockManager, audioManager: audioManager)
                 .frame(alignment: .leading)
-                .padding(.top, 5)
 
             // MARK: - Song Information and Controls
             VStack(alignment: .leading, spacing: 4) {
@@ -28,12 +33,17 @@ struct DockMusic: View {
                     .padding(.top, 2)
 
                 /// Slider
-                AudioSlider(audioManager: audioManager)
+                if dockManager.hoveringOverMusicPlayer {
+                    AudioSlider(audioManager: audioManager)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .animation(.easeOut(duration: 0.16), value: self.dockManager.hoveringOverMusicPlayer)
+                }
 
                 /// Button
-                AudioControls(audioManager: audioManager)
+                AudioControls(dockManager: dockManager, audioManager: audioManager)
+                    .padding(.top, dockManager.hoveringOverMusicPlayer ? 2 : 4)
             }
-            .frame(maxHeight: dockManager.height, alignment: .topLeading)
+            .frame(maxHeight: height, alignment: .topLeading)
         }
         .padding(.horizontal, 4)
 
@@ -49,9 +59,23 @@ struct DockMusic: View {
                 }
             }
         }
-        .frame(maxHeight: dockManager.height)
+        .frame(maxWidth: self.dockManager.hoveringOverMusicPlayer ? 250 : 180, maxHeight: height, alignment: .leading)
         .padding(.bottom, dockManager.paddingFromBottom)
-        .frame(maxWidth: 250)
+        .onHover { hovering in
+            hoverTask?.cancel()
+            
+            let task = DispatchWorkItem {
+                withAnimation(.interactiveSpring(response: 0.22, dampingFraction: 0.88)) {
+                    /// Hover is only true, if and only if isPlaying AND is hovering
+                    self.dockManager.hoveringOverMusicPlayer  = hovering && self.audioManager.nowPlayingInfo.isPlaying
+                }
+            }
+            hoverTask = task
+            
+            // quick show, slower hide (hysteresis)
+            let delay: Double = hovering ? 0.1 : 0.35
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: task)
+        }
         .onChange(of: dockManager.isVisible) {
             handleBlurringBackground()
         }
@@ -77,7 +101,7 @@ struct DockMusic: View {
     private func renderSongInformation() -> some View {
         VStack(alignment: .leading, spacing: -1) {
             Text(audioManager.nowPlayingInfo.trackName)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)

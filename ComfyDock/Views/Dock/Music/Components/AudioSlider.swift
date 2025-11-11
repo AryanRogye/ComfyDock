@@ -17,6 +17,8 @@ struct AudioSlider: View {
 
     let trackHeight: CGFloat = 8
     let hitHeight: CGFloat = 20
+    
+    @State private var hovering = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 4) {
@@ -27,52 +29,47 @@ struct AudioSlider: View {
 
             // Progress bar - perfectly centered
             GeometryReader { geometry in
-                Color.clear
-                    .contentShape(Rectangle())     // make the whole area hittable
-                    .frame(height: hitHeight)
-                    .highPriorityGesture(          // win conflicts vs other gestures
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                // Set the dragging flag to true
-                                isDragging = true
-                                let percentage = min(max(0, value.location.x / geometry.size.width), 1)
-                                manualDragPosition = Double(percentage) * audioManager.nowPlayingInfo.durationSeconds
-                            }
-                            .onEnded { value in
-                                let percentage = min(max(0, value.location.x / geometry.size.width), 1)
-
-                                // Convert % ➜ absolute seconds
-                                let newTimeInSeconds = percentage * audioManager.nowPlayingInfo.durationSeconds
-
-                                // 1. Seek the real player
-                                audioManager.playAtTime(to: newTimeInSeconds)
-
-                                // 2. Keep the thumb where the user left it (UI won't flash back)
-                                manualDragPosition = newTimeInSeconds
-
-                                /// This is delayed because someone like me plays spotify on my tv
-                                /// the device is seperate from the controller so updates for spotify
-                                /// take some time to propagate.
-                                checkPositionUpdate(targetPosition: newTimeInSeconds, attempts: 0)
-                            }
-                    )
-
                 let effectivePosition = isDragging ? manualDragPosition : audioManager.nowPlayingInfo.positionSeconds
                 ZStack(alignment: .leading) {
                     // Background track
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
-                        .frame(height: 6)
+                        .frame(height: hovering ? 7 : 6)
                         .cornerRadius(2)
 
                     // Progress bar
                     Rectangle()
                         .fill(Color(nsColor: audioManager.nowPlayingInfo.dominantColor))
-                        .frame(width: min(max(CGFloat(effectivePosition / max(audioManager.nowPlayingInfo.durationSeconds,1)) * geometry.size.width, 0), geometry.size.width), height: 6)
+                        .frame(width: min(max(CGFloat(effectivePosition / max(audioManager.nowPlayingInfo.durationSeconds,1)) * geometry.size.width, 0), geometry.size.width), height: hovering ? 7 : 6)
                         .cornerRadius(2)
                         .shadow(color: Color(nsColor: audioManager.nowPlayingInfo.dominantColor).opacity(0.5), radius: 4, x: 0, y: 2)
                 }
+                .overlay(alignment: .center) {
+                    Color.clear
+                        .frame(height: hitHeight)
+                        .contentShape(Rectangle())
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    isDragging = true
+                                    let percentage = min(max(0, value.location.x / geometry.size.width), 1)
+                                    manualDragPosition = Double(percentage) * audioManager.nowPlayingInfo.durationSeconds
+                                }
+                                .onEnded { value in
+                                    let percentage = min(max(0, value.location.x / geometry.size.width), 1)
+                                    let newTimeInSeconds = percentage * audioManager.nowPlayingInfo.durationSeconds
+                                    audioManager.playAtTime(to: newTimeInSeconds)
+                                    manualDragPosition = newTimeInSeconds
+                                    checkPositionUpdate(targetPosition: newTimeInSeconds, attempts: 0)
+                                }
+                        )
+                        .zIndex(1)
+                }
+                .animation(.easeOut(duration: 0.16), value: self.hovering)
                 .frame(maxHeight: .infinity, alignment: .center)
+                .onHover { hovering in
+                    self.hovering = hovering
+                }
             }
             .frame(height: trackHeight)
 

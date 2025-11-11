@@ -23,7 +23,7 @@ final class AppCoordinator {
     private var lastWasIn: Bool = false
     
     /// Coorinatonrs
-    lazy var dockOverlayCoordinator = DockOverlayCoordinator(dockManager: dockManager, audioManager: audioManager)
+    let dockOverlayCoordinator : DockOverlayCoordinator
 
     init(appEnv : AppEnv) {
         /// Initialize Services
@@ -35,7 +35,8 @@ final class AppCoordinator {
         self.audioManager = AudioManager()
         self.permissionManager = PermissionManager()
         
-        
+        self.dockOverlayCoordinator = DockOverlayCoordinator(dockManager: dockManager, audioManager: audioManager)
+
         refreshNow()
         watchApps()
     }

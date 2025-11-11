@@ -9,17 +9,25 @@ import SwiftUI
 
 struct AudioControls: View {
     
-    
+    @Bindable var dockManager  : DockManager
     @Bindable var audioManager : AudioManager
     
     private let forwardBackButtonWidth: CGFloat = 10
     private let forwardBackButtonHeight: CGFloat = 10
     
-    private let iconWidth: CGFloat = 8
-    private let iconHeight: CGFloat = 9
+    private var iconWidth: CGFloat {
+        return self.dockManager.hoveringOverMusicPlayer ? 10 : 8
+    }
+    private var iconHeight: CGFloat {
+        return self.dockManager.hoveringOverMusicPlayer ? 10 : 9
+    }
     
-    private let buttonWidth : CGFloat = 30
-    private let buttonHeight: CGFloat = 12
+    private var buttonWidth : CGFloat {
+        return self.dockManager.hoveringOverMusicPlayer ? 35 : 20
+    }
+    private var buttonHeight: CGFloat {
+        return self.dockManager.hoveringOverMusicPlayer ? 15 : 12
+    }
     
     var body: some View {
         HStack(spacing: 8) {
@@ -35,7 +43,10 @@ struct AudioControls: View {
             }
             .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
             
-            Spacer()
+            if dockManager.hoveringOverMusicPlayer {
+                Spacer()
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
+            }
             
             Button(action: {
                 audioManager.togglePlayPause()
@@ -49,7 +60,10 @@ struct AudioControls: View {
             }
             .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
             
-            Spacer()
+            if dockManager.hoveringOverMusicPlayer {
+                Spacer()
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
 
             Button(action: {
                 audioManager.playNextTrack()
@@ -62,7 +76,13 @@ struct AudioControls: View {
                     .foregroundColor(.primary)
             }
             .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
+            
+            if !dockManager.hoveringOverMusicPlayer {
+                Spacer()
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, dockManager.hoveringOverMusicPlayer ? 16 : 0)
+        .animation(.easeOut(duration: 0.16), value: self.dockManager.hoveringOverMusicPlayer)
     }
 }

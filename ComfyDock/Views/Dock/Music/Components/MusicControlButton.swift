@@ -45,8 +45,8 @@ struct MusicControlButton: ButtonStyle {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    tintColor.opacity(isHovering ? 0.15 : 0.05),
-                                    tintColor.opacity(isHovering ? 0.05 : 0.15)
+                                    tintColor.opacity(isHovering ? 0.22 : 0.10),
+                                    tintColor.opacity(isHovering ? 0.10 : 0.22)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -54,7 +54,7 @@ struct MusicControlButton: ButtonStyle {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(tintColor.opacity(0.1), lineWidth: 1)
+                                .stroke(tintColor.opacity(0.20), lineWidth: 1)
                         )
                         .scaleEffect(isPressed ? 0.95 : (isHovering ? 1.05 : 1.0))
                         .shadow(

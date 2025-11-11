@@ -22,10 +22,12 @@ struct AlbumCover: View {
     }
 
     var height : CGFloat {
-        dockManager.height - 10
+        let height = dockManager.height - 10
+        return dockManager.hoveringOverMusicPlayer ? height + 10: height
     }
     var width : CGFloat {
-        dockManager.height - 10
+        let height = dockManager.height - 10
+        return dockManager.hoveringOverMusicPlayer ? height + 10: height
     }
 
     var shadowColor : Color {
@@ -37,23 +39,29 @@ struct AlbumCover: View {
             ZStack {
                 if let cachedArtwork = cachedArtwork {
                     renderImage(for: cachedArtwork)
+                        .compositingGroup()
                         .opacity(isFrontSide ? 1 : 0)
-                        .shadow(color: shadowColor, radius: 2)
                 } else {
                     placeholderAlbumCover
-                        .opacity(isFrontSide ? 1 : 0)
-                        .shadow(color: shadowColor, radius: 2)
+                        .compositingGroup()
                 }
 
                 // Back side (new image) - visible at 180°
                 if let artwork = audioManager.nowPlayingInfo.artworkImage {
                     renderImage(for: artwork)
                         .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+                        .compositingGroup()
                         .opacity(isFrontSide ? 0 : 1)
                 }
             }
             .rotation3DEffect(.degrees(flipRotation), axis: (x: 0, y: 1, z: 0))
             .animation(.easeInOut(duration: flipDuration), value: flipRotation)
+            .drawingGroup(opaque: false, colorMode: .extendedLinear)
+            
+            /// These should be out, These valus will make sure no weird "box" shows
+            /// up around the image
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: shadowColor, radius: 2)
         }
         .onAppear {
             cachedArtwork = audioManager.nowPlayingInfo.artworkImage
@@ -68,12 +76,10 @@ struct AlbumCover: View {
             .resizable()
             .aspectRatio(contentMode: .fill)
             .frame(width: width, height: height)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
     }
 
     private var placeholderAlbumCover: some View {
@@ -99,7 +105,6 @@ struct AlbumCover: View {
                 .foregroundColor(.white.opacity(0.5))
         }
         .frame(width: width, height: height)
-        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
     }
 
     // MARK: - Handle 180° Flip with Two-Sided Card

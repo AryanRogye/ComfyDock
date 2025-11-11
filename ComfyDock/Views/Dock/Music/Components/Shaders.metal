@@ -26,29 +26,72 @@ vertex VertexOut vertexPassthrough(
     return out;
 }
 
+// MARK: - Ambient Gradient (Medium)
+
+//
+// Tunable parameters for controlling motion, softness, color strength,
+// and the fade-in behavior of the ambient gradient shader.
+//
+
+/// Controls how fast the gradient’s blobs drift over time.
+/// - Lower (≈0.1): calm, slow movement.
+/// - Higher (≈0.5–1.0): more lively, noticeable motion.
+constant float kMoveSpeed     = 1.0;  // noticeably swirling motion
+
+/// Shapes the falloff curve of brightness.
+/// - Higher values (2.5–3.0): sharper falloff, darker overall.
+/// - Lower values (1.5–1.8): smoother, more evenly lit.
+constant float kBrightnessPow = 2.1;  // reduces falloff so colors stay brighter
+
+/// Adjusts overall color saturation and intensity.
+/// - Lower (≈0.4): softer pastel tone.
+/// - Higher (≈0.7–0.8): vivid, strong tint.
+constant float kColorGain     = 0.3;  // strong color intensity
+
+/// Controls the transparency of the overlay.
+/// - Lower (≈0.1): barely visible.
+/// - Higher (≈0.3): more prominent glow layer.
+constant float kAlphaGain     = 0.5;  // more opaque overlay (clearly visible)
+
+/// Determines how smoothly the gradient fades in with blurProgress.
+/// - Higher (≈8–10): slower, smoother reveal.
+/// - Lower (≈3–5): faster, more immediate appearance.
+constant float kEaseExponent  = 3.0;  // fades in much faster with blurProgress
+
+
 // MARK: - Ambient Gradent Shader
-fragment float4 ambientGradient(VertexOut in [[stage_in]],
-                                 constant float &time [[buffer(0)]],
-                                 constant float3 &tint [[buffer(1)]],
-                                 constant float &blurProgress [[buffer(2)]]) {
+fragment float4 ambientGradient(
+                                VertexOut in [[stage_in]],
+                                constant float  &time         [[buffer(0)]],
+                                constant float3 &tint         [[buffer(1)]],
+                                constant float  &blurProgress [[buffer(2)]]
+                                ) {
     float2 uv = in.uv;
     
-    float angle = time * 0.5;
+    // Direction of the gradient slowly rotates over time
+    float angle = time * kMoveSpeed;
     float2 dir = float2(cos(angle), sin(angle));
     
+    // Compute a linear fade across the screen along that direction
     float fade = dot(uv - 0.5, dir) * 1.5;
+    
+    // Map fade from [-1, 1] to [0, 1] and smooth it out
     float brightness = smoothstep(0.0, 1.0, 0.5 + 0.5 * fade);
     
-    // CHANGED: Increased brightness multiplier from 0.25 to 0.8 for more visible colors
-    float3 finalColor = tint * brightness * 0.8;
+    // Shape brightness with an exponent for softer or harsher falloff
+    brightness = pow(brightness, kBrightnessPow);
     
-    float easedProgress = pow(blurProgress, 8.0);
-    // Lerp between transparent and the final color based on blurProgress
-    float3 color = finalColor * easedProgress;
+    // Compute eased progression for blur reveal
+    float eased = pow(saturate(blurProgress), kEaseExponent);
     
-    // Use low alpha for subtle color bleed-through effect
-    // Alpha increases with brightness so darker areas are more transparent
-    float alpha = brightness * easedProgress * 0.3; // Adjust 0.3 for more/less visibility
+    // Apply tint and color intensity
+    float3 finalColor = tint * brightness * kColorGain;
+    
+    // Final color, modulated by the blur progression
+    float3 color = finalColor * eased;
+    
+    // Overall transparency, scaled by brightness and alpha gain
+    float alpha = brightness * eased * kAlphaGain;
     
     return float4(color, alpha);
 }

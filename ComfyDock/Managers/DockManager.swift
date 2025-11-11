@@ -15,4 +15,6 @@ public class DockManager {
     
     var runningApps : [RunningApp] = []
     var rightClickApp: RunningApp? = nil
+    
+    var hoveringOverMusicPlayer = false
 }

@@ -27,9 +27,9 @@ final class DockOverlayCoordinator: NSObject {
     // MARK: - Public API
     func show() {
         guard let panel = panel else { createPanel(); return show() }
-        let final = currentFrame()                 // <- your target rect (uses dock.height)
+        let final = currentFrame()
         var start = final
-        start.size.height = 0                      // slide up from bottom
+        start.size.height = 0
         
         panel.animationBehavior = .none
         panel.alphaValue = 0

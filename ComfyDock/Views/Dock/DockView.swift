@@ -31,7 +31,7 @@ struct BottomDock: View {
     @Bindable var audioManager : AudioManager
     
     var body: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .bottom) {
             DockApps(dockManager: dockManager)
             DockMusic(dockManager: dockManager, audioManager: audioManager)
         }
