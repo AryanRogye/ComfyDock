@@ -24,7 +24,6 @@ import Cocoa
 @_silgen_name("_AXUIElementCreateWithRemoteToken")
 func _AXUIElementCreateWithRemoteToken(_ token: CFData) -> Unmanaged<AXUIElement>?
 
-
 struct CGSWindowCaptureOptions: OptionSet {
     let rawValue: UInt32
     

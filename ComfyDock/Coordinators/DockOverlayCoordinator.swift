@@ -7,16 +7,20 @@
 
 import AppKit
 import SwiftUI
+import Dock
 
 final class DockOverlayCoordinator: NSObject {
     
     var dockManager: DockManager
+    var dockControls : DockControls
     var audioManager : AudioManager
+    
     private var panel: NSPanel?
     private var host: NSHostingView<AnyView>?
     
-    init(dockManager: DockManager, audioManager: AudioManager) {
+    init(dockControls : DockControls, dockManager: DockManager, audioManager: AudioManager) {
         self.dockManager = dockManager
+        self.dockControls = dockControls
         self.audioManager = audioManager
         super.init()
         
@@ -101,7 +105,7 @@ final class DockOverlayCoordinator: NSObject {
         p.isOpaque = false
         p.hasShadow = false
         
-        let view : NSView = NSHostingView(rootView: DockView(dockManager: dockManager, audioManager: audioManager))
+        let view : NSView = NSHostingView(rootView: DockView(dockControls: dockControls, dockManager: dockManager, audioManager: audioManager))
         
         view.wantsLayer = true
         view.layer?.masksToBounds = true

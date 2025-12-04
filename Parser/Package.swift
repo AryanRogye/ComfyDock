@@ -19,5 +19,9 @@ let package = Package(
             name: "ParserCore",
             publicHeadersPath: "include"
         ),
+        .executableTarget(
+            name: "ParserCLI",
+            dependencies: ["Parser"]
+        ),
     ]
 )

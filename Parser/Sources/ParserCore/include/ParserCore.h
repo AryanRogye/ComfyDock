@@ -15,4 +15,5 @@
 }
 - (instancetype)init;
 - (NSArray*) getXcodeItems;
+- (NSString*) readPlistFile:(NSURL*)url;
 @end

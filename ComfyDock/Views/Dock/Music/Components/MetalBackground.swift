@@ -104,13 +104,12 @@ struct MetalBackground: NSViewRepresentable {
     
     func updateNSView(_ nsView: MTKView, context: Context) {}
     
+    let ctx = MetalContext.shared
+    
     func makeNSView(context: Context) -> MTKView {
         let mtkView = MTKView()
-        guard let device = MTLCreateSystemDefaultDevice() else {
-            print("Error: Metal is not supported on this device.")
-            return MTKView()
-        }
-        mtkView.device = device
+        
+        mtkView.device = ctx.device
         mtkView.layer?.isOpaque = false
         mtkView.clearColor = MTLClearColorMake(0, 0, 0, 0)
         mtkView.colorPixelFormat = .bgra8Unorm
@@ -128,6 +127,7 @@ struct MetalBackground: NSViewRepresentable {
     
     class RendererCoordinator: NSObject, MTKViewDelegate {
         
+        let ctx = MetalContext.shared
         var targetView: MTKView!
         var audioManager : AudioManager?
         var metalAnimationState : MetalAnimationState?
@@ -210,8 +210,8 @@ struct MetalBackground: NSViewRepresentable {
         }
         
         private func setupMetal() {
-            let device = MTLCreateSystemDefaultDevice()!
-            let library = device.makeDefaultLibrary()!
+            let device = ctx.device
+            let library = ctx.library
             
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             
@@ -226,7 +226,7 @@ struct MetalBackground: NSViewRepresentable {
                 print("Failed to create pipeline state with animation '\(animationName)':", error)
                 pipelineState = nil
             }
-            commandQueue = device.makeCommandQueue()
+            commandQueue = ctx.queue
             
             let quadVertices: [Float] = [
                 -1, -1, 0, 1,  // Bottom Left

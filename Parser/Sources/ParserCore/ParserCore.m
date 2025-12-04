@@ -52,6 +52,14 @@
     return dict[@"items"];
 }
 
+- (NSArray*) getPropertyListFile:(NSData *)data {
+    
+    NSPropertyListFormat format = NSPropertyListBinaryFormat_v1_0;
+    
+    NSError* err;
+    return [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:&format error:&err];
+}
+
 - (NSArray*) getXcodeItems {
     
     /// If No Data
@@ -82,6 +90,23 @@
         }
     }
     return contents;
+}
+
+- (NSString*) readPlistFile:(NSURL *)url {
+    
+    NSError* err;
+    
+    NSData* data = [NSData dataWithContentsOfURL:url options:0 error:&err];
+    
+    if (err != nil) {
+        NSLog(@"Error Extracting Data: %@", err);
+        return @"";
+    }
+    NSLog(@"Data Extracted From: %@ Contents: %@", url, data);
+    NSArray* unarchived = [self getPropertyListFile:data];
+    NSLog(@"Unarchived: %@", unarchived);
+    
+    return @"";
 }
 
 @end
