@@ -11,9 +11,15 @@ public final class AXListSubscription {
     let pid: pid_t
     var observer: AXObserver? = nil
     var list: AXUIElement? = nil
+    var application: AXUIElement? = nil
+    var applicationNotifications: [CFString] = []
     var onChange: ((pid_t, AXUIElement, CFString) -> Void)?
 
-    init?(pid: pid_t, forlist list: AXUIElement) {
+    init?(
+        pid: pid_t,
+        forlist list: AXUIElement,
+        application: AXUIElement? = nil
+    ) {
         self.pid = pid
         
         var obs: AXObserver?
@@ -38,6 +44,26 @@ public final class AXListSubscription {
         
         self.observer = observer
         self.list = list
+        self.application = application
+
+        if let application {
+            for notification in [
+                kAXMenuOpenedNotification as CFString,
+                kAXMenuClosedNotification as CFString,
+            ] {
+                let result = AXObserverAddNotification(
+                    observer,
+                    application,
+                    notification,
+                    Unmanaged.passUnretained(self).toOpaque()
+                )
+
+                if result == .success ||
+                    result == .notificationAlreadyRegistered {
+                    applicationNotifications.append(notification)
+                }
+            }
+        }
 
         CFRunLoopAddSource(
             CFRunLoopGetMain(),
@@ -54,6 +80,16 @@ public final class AXListSubscription {
                 list,
                 kAXSelectedChildrenChangedNotification as CFString
             )
+
+            if let application {
+                for notification in applicationNotifications {
+                    AXObserverRemoveNotification(
+                        observer,
+                        application,
+                        notification
+                    )
+                }
+            }
             
             CFRunLoopRemoveSource(
                 CFRunLoopGetMain(),
@@ -64,6 +100,8 @@ public final class AXListSubscription {
         
         observer = nil
         list = nil
+        application = nil
+        applicationNotifications.removeAll()
     }
 
     private static let callback: AXObserverCallback = { observer, element, notification, refcon in

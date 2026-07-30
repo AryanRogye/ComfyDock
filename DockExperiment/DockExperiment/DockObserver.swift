@@ -11,8 +11,9 @@ final class DockObserver {
     
     let windowCore: WindowCore
     var dockSubscription: AXListSubscription?
-    var onDockRectFound: ((CGRect) -> Void)?
+    var onMagnifiedBoundsChanged: ((CGRect) -> Void)?
     var onNoHover: (() -> Void)?
+    var onDockMenuVisibilityChanged: ((Bool) -> Void)?
     private var hoverRefreshTask: Task<Void, Never>?
     
     init(windowCore: WindowCore) {
@@ -45,16 +46,28 @@ final class DockObserver {
             return
         }
         
-        if let sub = AXListSubscription(pid: dockPID, forlist: dockList) {
+        if let sub = AXListSubscription(
+            pid: dockPID,
+            forlist: dockList,
+            application: dockApplication
+        ) {
             dockSubscription = sub
             dockSubscription?.onChange = { [weak self] pid, element, notification in
                 guard let self else { return }
                 
                 print("got notification: \(notification)")
-                
-                guard notification as String ==
-                        kAXSelectedChildrenChangedNotification
-                else {
+
+                switch notification as String {
+                case kAXMenuOpenedNotification:
+                    hoverRefreshTask?.cancel()
+                    onDockMenuVisibilityChanged?(true)
+                    return
+                case kAXMenuClosedNotification:
+                    onDockMenuVisibilityChanged?(false)
+                    return
+                case kAXSelectedChildrenChangedNotification:
+                    break
+                default:
                     return
                 }
 
@@ -69,7 +82,7 @@ final class DockObserver {
                         .milliseconds(66),
                     ]
 
-                    for (index, delay) in refreshDelays.enumerated() {
+                    for delay in refreshDelays {
                         try? await Task.sleep(for: delay)
                         guard !Task.isCancelled else { return }
 
@@ -79,10 +92,8 @@ final class DockObserver {
                         )
 
                         guard selected?.first != nil else {
-                            if index == 0 {
-                                onNoHover?()
-                            }
-                            return
+                            onNoHover?()
+                            continue
                         }
 
                         guard let magnifiedBounds = currentBounds(of: dockList) else {
@@ -90,7 +101,7 @@ final class DockObserver {
                         }
 
                         print("Magnified AX bounds:", magnifiedBounds)
-                        onDockRectFound?(magnifiedBounds)
+                        onMagnifiedBoundsChanged?(magnifiedBounds)
                     }
                 }
             }
