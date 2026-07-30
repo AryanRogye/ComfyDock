@@ -165,7 +165,7 @@ class AppCoordinator {
         panel.becomesKeyOnlyIfNeeded = true
         panel.hidesOnDeactivate = false
         panel.animationBehavior = .none
-        panel.ignoresMouseEvents = false
+        panel.ignoresMouseEvents = true
         
         let view = NSHostingView(
             rootView: DockPreviewView()
