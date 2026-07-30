@@ -14,24 +14,17 @@ import ApplicationServices.HIServices.AXUIElement
 import ApplicationServices.HIServices.AXValue
 import Cocoa
 
-/// Core Graphics types
-typealias CGSConnectionID = UInt32
-typealias CGSWindowCount = UInt32
-typealias CGSSpaceID = UInt64
-typealias CGSSpaceMask = UInt64
-
-
 // returns CoreDock orientation and pinning state
 @_silgen_name("CoreDockGetOrientationAndPinning")
-func CoreDockGetOrientationAndPinning(_ outOrientation: UnsafeMutablePointer<Int32>, _ outPinning: UnsafeMutablePointer<Int32>)
+public func CoreDockGetOrientationAndPinning(_ outOrientation: UnsafeMutablePointer<Int32>, _ outPinning: UnsafeMutablePointer<Int32>)
 
 // Toggles the Dock's auto-hide state
 @_silgen_name("CoreDockSetAutoHideEnabled")
-func CoreDockSetAutoHideEnabled(_ flag: Bool)
+public func CoreDockSetAutoHideEnabled(_ flag: Bool)
 
 // Retrieves the current auto-hide state of the Dock
 @_silgen_name("CoreDockGetAutoHideEnabled")
-func CoreDockGetAutoHideEnabled() -> Bool
+public func CoreDockGetAutoHideEnabled() -> Bool
 
 // Retrieves the current magnification state of the Dock
 @_silgen_name("CoreDockIsMagnificationEnabled")
@@ -39,37 +32,18 @@ func CoreDockIsMagnificationEnabled() -> Bool
 
 // Simple version - just get the rect
 @_silgen_name("CoreDockGetRect")
-func CoreDockGetRect(_ outRect: UnsafeMutablePointer<CGRect>)
+public func CoreDockGetRect(_ outRect: UnsafeMutablePointer<CGRect>)
 
-// Get rect + orientation
+// Get rect + orientation (this crashes)
 @_silgen_name("CoreDockGetRectAndOrientation")
-func CoreDockGetRectAndOrientation(_ outRect: UnsafeMutablePointer<CGRect>, _ outOrientation: UnsafeMutablePointer<Int32>)
+public func CoreDockGetRectAndOrientation(_ outRect: UnsafeMutablePointer<CGRect>, _ outOrientation: UnsafeMutablePointer<Int32>)
 
 @_silgen_name("CoreDockGetTileSize")
-func CoreDockGetTileSize() -> Float
+public func CoreDockGetTileSize() -> Float
 
 // Get rect + reason (probably why it changed)
 @_silgen_name("CoreDockGetRectAndReason")
-func CoreDockGetRectAndReason(_ outRect: UnsafeMutablePointer<CGRect>, _ outReason: UnsafeMutablePointer<Int32>)
-
-
-
-@_silgen_name("_AXUIElementCreateWithRemoteToken")
-func _AXUIElementCreateWithRemoteToken(_ token: CFData) -> Unmanaged<AXUIElement>?
-
-struct CGSWindowCaptureOptions: OptionSet {
-    let rawValue: UInt32
-    
-    static let ignoreGlobalClipShape = CGSWindowCaptureOptions(rawValue: 1 << 11)
-    static let nominalResolution = CGSWindowCaptureOptions(rawValue: 1 << 9)
-    static let bestResolution = CGSWindowCaptureOptions(rawValue: 1 << 8)
-    static let fullSize = CGSWindowCaptureOptions(rawValue: 1 << 19)
-}
-
-let kCGSAllSpacesMask: CGSSpaceMask = 0xFFFF_FFFF_FFFF_FFFF
-let kAXFullscreenAttribute = "AXFullScreen"
-let kAXWindowNumberAttribute = "AXWindowNumber" as CFString
-
+public func CoreDockGetRectAndReason(_ outRect: UnsafeMutablePointer<CGRect>, _ outReason: UnsafeMutablePointer<Int32>)
 
 
 extension AXUIElement {
@@ -114,25 +88,6 @@ extension AXUIElement {
             return nil
         }
         return windows
-    }
-    
-    static func windowsByBruteForce(_ pid: pid_t) -> [AXUIElement] {
-        var token = Data(count: 20)
-        token.replaceSubrange(0 ..< 4, with: withUnsafeBytes(of: pid) { Data($0) })
-        token.replaceSubrange(4 ..< 8, with: withUnsafeBytes(of: Int32(0)) { Data($0) })
-        token.replaceSubrange(8 ..< 12, with: withUnsafeBytes(of: Int32(0x636F_636F)) { Data($0) })
-        
-        var results: [AXUIElement] = []
-        for axId: AXUIElementID in 0 ..< 1000 {
-            token.replaceSubrange(12 ..< 20, with: withUnsafeBytes(of: axId) { Data($0) })
-            if let el = _AXUIElementCreateWithRemoteToken(token as CFData)?.takeRetainedValue(),
-               let subrole = try? el.subrole(),
-               [kAXStandardWindowSubrole, kAXDialogSubrole].contains(subrole)
-            {
-                results.append(el)
-            }
-        }
-        return results
     }
     
     private static func getAXWindowRect(_ axWindow: AXUIElement) -> CGRect? {
