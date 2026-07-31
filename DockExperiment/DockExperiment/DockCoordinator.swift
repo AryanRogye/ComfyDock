@@ -15,9 +15,12 @@ final class DockCoordinator {
     var isDockHidden: Bool = false
     var dockTileSize: Float?
     var onDockRectFound: ((CGRect) -> Void)?
-    private(set) var usesAutoHide = false
 
     private var dockOrientation: Int32 = 0
+
+    var isAutoHideEnabled: Bool {
+        CoreDockGetAutoHideEnabled()
+    }
 
     /// Captures a real, fully revealed Dock frame before the preview UI is
     /// created. An auto-hidden Dock otherwise reports only its trigger strip,
@@ -26,7 +29,11 @@ final class DockCoordinator {
     @MainActor
     public func primeDockTracking() async -> Bool {
         let wasAutoHideEnabled = CoreDockGetAutoHideEnabled()
-        usesAutoHide = wasAutoHideEnabled
+
+        var orientation: Int32 = 0
+        var pinning: Int32 = 0
+        CoreDockGetOrientationAndPinning(&orientation, &pinning)
+        dockOrientation = orientation
 
         guard wasAutoHideEnabled else {
             getCoreDockRect()
@@ -34,11 +41,6 @@ final class DockCoordinator {
         }
 
         CoreDockSetAutoHideEnabled(false)
-
-        var orientation: Int32 = 0
-        var pinning: Int32 = 0
-        CoreDockGetOrientationAndPinning(&orientation, &pinning)
-        dockOrientation = orientation
 
         let minimumRevealedThickness = max(
             CGFloat(CoreDockGetTileSize()) * 0.75,
@@ -105,7 +107,7 @@ final class DockCoordinator {
 
         // Once primed, the auto-hidden trigger strip must never replace the
         // real base geometry used by hover and magnification calculations.
-        if usesAutoHide, !isUsableVisibleDockRect(rect) {
+        if isAutoHideEnabled, !isUsableVisibleDockRect(rect) {
             return
         }
 

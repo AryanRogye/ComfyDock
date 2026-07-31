@@ -36,7 +36,7 @@ class AppCoordinator {
         }
 
         self.dockPreviewCoordinator.shouldHideWhenTrackingEnds = { [weak self] in
-            self?.dockCoordinator.usesAutoHide == true
+            self?.dockCoordinator.isAutoHideEnabled == true
         }
         
         self.dockCoordinator.onDockRectFound = { [weak self] rect in
@@ -48,7 +48,7 @@ class AppCoordinator {
         
         self.dockObserver.onNoHover = { [weak self] in
             guard let self else { return }
-            if self.dockCoordinator.usesAutoHide {
+            if self.dockCoordinator.isAutoHideEnabled {
                 self.dockPreviewCoordinator.autoHiddenDockDidLoseHover()
                 return
             }
@@ -58,9 +58,7 @@ class AppCoordinator {
         }
         self.dockObserver.onMagnifiedBoundsChanged = { [weak self] rect in
             guard let self else { return }
-            if self.dockCoordinator.usesAutoHide {
-                self.dockPreviewCoordinator.showPrimedDockPanels()
-            }
+            self.dockPreviewCoordinator.showPrimedDockPanels()
             self.dockPreviewCoordinator.dockObserverDidReceiveMagnifiedBoundsChanged(rect)
         }
         Task {

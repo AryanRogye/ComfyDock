@@ -100,7 +100,7 @@ extension DockPreviewCoordinator {
     }
 
     public func autoHiddenDockDidLoseHover() {
-        if isPointerInsidePanel() {
+        if isPointerInsideTrackingRegion() {
             isInTrackingArea = true
             return
         }
@@ -227,14 +227,14 @@ extension DockPreviewCoordinator {
                 
                 switch event.type {
                 case .rightMouseDown:
-                    if self.isPointerInsidePanel() {
+                    if self.isPointerInsideDockPanel() {
                         self.beginDockMenuInteraction()
                     } else if self.isDockMenuInteractionActive {
                         self.scheduleDockMenuInteractionEnd()
                     }
                 case .leftMouseDown:
                     if event.modifierFlags.contains(.control),
-                       self.isPointerInsidePanel() {
+                       self.isPointerInsideDockPanel() {
                         self.beginDockMenuInteraction()
                     } else if self.isDockMenuInteractionActive {
                         self.scheduleDockMenuInteractionEnd()
@@ -263,7 +263,7 @@ extension DockPreviewCoordinator {
     }
     
     private func updatePointerTracking() {
-        let isInside = isPointerInsidePanel()
+        let isInside = isPointerInsideTrackingRegion()
         if isInside || isDockMenuInteractionActive {
             isInTrackingArea = true
         } else if isInTrackingArea {
@@ -308,7 +308,7 @@ extension DockPreviewCoordinator {
             guard !Task.isCancelled, let self else { return }
             
             self.isDockMenuInteractionActive = false
-            if self.isPointerInsidePanel() {
+            if self.isPointerInsideTrackingRegion() {
                 self.isInTrackingArea = true
             } else {
                 self.collapseToBaseDock()
@@ -325,8 +325,20 @@ extension DockPreviewCoordinator {
         load(baseDockRect)
     }
     
-    private func isPointerInsidePanel() -> Bool {
+    private func isPointerInsideDockPanel() -> Bool {
         dockPanel?.frame.contains(NSEvent.mouseLocation) == true
+    }
+
+    private func isPointerInsideTrackingRegion() -> Bool {
+        guard let dockFrame = dockPanel?.frame else {
+            return dockUIPanel?.frame.contains(NSEvent.mouseLocation) == true
+        }
+
+        let trackingFrame = dockUIPanel.map {
+            dockFrame.union($0.frame)
+        } ?? dockFrame
+
+        return trackingFrame.contains(NSEvent.mouseLocation)
     }
 }
 
@@ -414,7 +426,8 @@ extension DockPreviewCoordinator {
     /// If either condition is true, we preserve the current expanded state.
     /// Otherwise, we collapse back to the base (non-magnified) Dock bounds.
     public func dockObserverDidCallNoHover() {
-        if self.isDockMenuInteractionActive || self.isPointerInsidePanel() {
+        if self.isDockMenuInteractionActive ||
+            self.isPointerInsideTrackingRegion() {
             self.isInTrackingArea = true
         } else {
             self.collapseToBaseDock()
@@ -428,7 +441,7 @@ extension DockPreviewCoordinator {
     /// magnified region, preventing the preview from shrinking around the
     /// hovered icons.
     public func dockObserverDidReceiveMagnifiedBoundsChanged(_ rect: CGRect) {
-        guard self.isPointerInsidePanel() else { return }
+        guard self.isPointerInsideDockPanel() else { return }
         self.isInTrackingArea = true
         self.onGetCoreDockRect?()
         
