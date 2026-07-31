@@ -8,7 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		9B33F88C301AB9D000340556 /* Dock in Frameworks */ = {isa = PBXBuildFile; productRef = 9B33F88B301AB9D000340556 /* Dock */; };
+		9BB62B0F301C31AB00F5011A /* MediaRemoteAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 9BB62B0E301C31AB00F5011A /* MediaRemoteAdapter */; };
+		9BB62B10301C325000F5011A /* MediaRemoteAdapter in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 9BB62B0E301C31AB00F5011A /* MediaRemoteAdapter */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9BB62B11301C325000F5011A /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = Frameworks;
+			files = (
+				9BB62B10301C325000F5011A /* MediaRemoteAdapter in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		9B33F87C301AB9BF00340556 /* DockExperiment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DockExperiment.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -40,6 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				9B33F88C301AB9D000340556 /* Dock in Frameworks */,
+				9BB62B0F301C31AB00F5011A /* MediaRemoteAdapter in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -71,6 +86,7 @@
 				9B33F878301AB9BF00340556 /* Sources */,
 				9B33F879301AB9BF00340556 /* Frameworks */,
 				9B33F87A301AB9BF00340556 /* Resources */,
+				9BB62B11301C325000F5011A /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -80,6 +96,7 @@
 			name = DockExperiment;
 			packageProductDependencies = (
 				9B33F88B301AB9D000340556 /* Dock */,
+				9BB62B0E301C31AB00F5011A /* MediaRemoteAdapter */,
 			);
 			productName = DockExperiment;
 			productReference = 9B33F87C301AB9BF00340556 /* DockExperiment.app */;
@@ -111,6 +128,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				9B33F88A301AB9D000340556 /* XCLocalSwiftPackageReference "../Dock" */,
+				9BB62B0D301C31AB00F5011A /* XCRemoteSwiftPackageReference "mediaremote-adapter" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9B33F87D301AB9BF00340556 /* Products */;
@@ -379,10 +397,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		9BB62B0D301C31AB00F5011A /* XCRemoteSwiftPackageReference "mediaremote-adapter" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ejbills/mediaremote-adapter.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		9B33F88B301AB9D000340556 /* Dock */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Dock;
+		};
+		9BB62B0E301C31AB00F5011A /* MediaRemoteAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9BB62B0D301C31AB00F5011A /* XCRemoteSwiftPackageReference "mediaremote-adapter" */;
+			productName = MediaRemoteAdapter;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

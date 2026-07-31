@@ -11,8 +11,11 @@ import SwiftUI
 @MainActor
 final class DockPreviewCoordinator {
     
+    let audioManager: AudioManager
+    
     /// Main Panel Holding Content To Preview Border Around Dock
     var dockPanel: NSPanel!
+    var dockUIPanel: NSPanel!
     var dockRect: NSRect?
     var baseDockRect: CGRect?
     private var lastExpandedDockRect: CGRect?
@@ -24,8 +27,12 @@ final class DockPreviewCoordinator {
     // this should trigger
     var onGetCoreDockRect: (() -> Void)?
     
-    init() {
-        
+    private let leadingDockUIPadding: CGFloat = 10
+    private let trailingDockUIPadding: CGFloat = 5
+    private var animationGeneration: UInt64 = 0
+    
+    init(audioManager: AudioManager) {
+        self.audioManager = audioManager
     }
     
     deinit {
@@ -38,13 +45,91 @@ final class DockPreviewCoordinator {
     private func load(_ rect: CGRect) {
         self.dockRect = rect
         if dockPanel != nil {
-            self.dockPanel.setFrame(rect.convertToAppKit(), display: true)
+            let dockPanelRect = rect.convertToAppKit()
+            guard let screen = NSScreen.screen(containing: dockPanelRect) else {
+                return
+            }
+
+            self.dockPanel.setFrame(dockPanelRect, display: true)
+            var dockUIPanelRect = createDockUIRect(from: dockPanelRect, in: screen)
+            // we will keep the baseDockRect height tho
+            dockUIPanelRect.size.height = baseDockRect?.height ?? dockUIPanelRect.size.height
+            
+            let startFrame = self.dockUIPanel.frame
+            let trueFrame = dockUIPanelRect
+            
+            if startFrame == trueFrame {
+                return
+            }
+            
+            iOSAnimation(
+                panel: self.dockUIPanel,
+                startFrame: startFrame,
+                trueFrame: trueFrame,
+            )
         } else {
-            setupPanel()
+            setupDockPanel()
+            setupDockUIPanel()
         }
     }
+}
 
-    public func setupPanel() {
+// MARK: - UI
+extension DockPreviewCoordinator {
+    public func setupDockUIPanel() {
+        guard let dockRect else { return }
+        let dockPanelRect = dockRect.convertToAppKit()
+        guard let screen = NSScreen.screen(containing: dockPanelRect) else {
+            return
+        }
+
+        dockUIPanel = ActiveAppearancePanel(
+            contentRect: .zero,
+            styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        
+        let dockUIRect = createDockUIRect(from: dockPanelRect, in: screen)
+        
+        dockUIPanel.setFrame(dockUIRect, display: true)
+        dockUIPanel.contentView?.wantsLayer = true
+        dockUIPanel.acceptsMouseMovedEvents = true
+        
+        let overlayRaw = CGWindowLevelForKey(.overlayWindow)
+        dockUIPanel.level = NSWindow.Level(rawValue: Int(overlayRaw))
+        
+        dockUIPanel.collectionBehavior = [
+            .canJoinAllSpaces,
+            .fullScreenAuxiliary,
+            .fullScreenDisallowsTiling,
+            .ignoresCycle,
+            .transient
+        ]
+        
+        dockUIPanel.isMovableByWindowBackground = false
+        dockUIPanel.backgroundColor = .clear
+        dockUIPanel.isOpaque = false
+        dockUIPanel.hasShadow = false
+        dockUIPanel.becomesKeyOnlyIfNeeded = true
+        dockUIPanel.hidesOnDeactivate = false
+        dockUIPanel.animationBehavior = .none
+        // we want to allow touching stuff
+        dockUIPanel.ignoresMouseEvents = false
+        
+        let view = NSHostingView(
+            rootView: DockContentView(height: dockUIRect.height)
+                .environment(audioManager)
+        )
+        
+        view.wantsLayer = true
+        view.layer?.masksToBounds = false
+        
+        dockUIPanel.contentView = view
+        dockUIPanel.makeKeyAndOrderFront(nil)
+    }
+    
+    public func setupDockPanel() {
         guard let dockRect else { return }
         dockPanel = FocusablePanel(
             contentRect: .zero,
@@ -87,7 +172,10 @@ final class DockPreviewCoordinator {
         dockPanel.makeKeyAndOrderFront(nil)
         startMouseTracking()
     }
-    
+}
+
+// MARK: - Helpers
+extension DockPreviewCoordinator {
     private func startMouseTracking() {
         guard mouseMovedMonitor == nil else { return }
         mouseMovedMonitor = NSEvent.addGlobalMonitorForEvents(
@@ -102,7 +190,7 @@ final class DockPreviewCoordinator {
         ) { [weak self] event in
             Task { @MainActor in
                 guard let self else { return }
-
+                
                 switch event.type {
                 case .rightMouseDown:
                     if self.isPointerInsidePanel() {
@@ -130,7 +218,16 @@ final class DockPreviewCoordinator {
             }
         }
     }
-
+    
+    private func createDockUIRect(from dockPanelRect: CGRect, in screen: NSScreen) -> CGRect {
+        CGRect(
+            x: dockPanelRect.maxX + leadingDockUIPadding,
+            y: dockPanelRect.minY,
+            width: screen.frame.maxX - dockPanelRect.maxX - trailingDockUIPadding,
+            height: dockPanelRect.height
+        )
+    }
+    
     private func updatePointerTracking() {
         let isInside = isPointerInsidePanel()
         if isInside || isDockMenuInteractionActive {
@@ -139,24 +236,24 @@ final class DockPreviewCoordinator {
             collapseToBaseDock()
         }
     }
-
+    
     private func beginDockMenuInteraction() {
         dockMenuDismissalTask?.cancel()
         isDockMenuInteractionActive = true
         isInTrackingArea = true
         onGetCoreDockRect?()
-
+        
         if let lastExpandedDockRect {
             load(lastExpandedDockRect)
         }
     }
-
+    
     private func scheduleDockMenuInteractionEnd() {
         dockMenuDismissalTask?.cancel()
         dockMenuDismissalTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(120))
             guard !Task.isCancelled, let self else { return }
-
+            
             self.isDockMenuInteractionActive = false
             if self.isPointerInsidePanel() {
                 self.isInTrackingArea = true
@@ -177,6 +274,46 @@ final class DockPreviewCoordinator {
     
     private func isPointerInsidePanel() -> Bool {
         dockPanel?.frame.contains(NSEvent.mouseLocation) == true
+    }
+}
+
+// MARK: - Animation
+extension DockPreviewCoordinator {
+    private func iOSAnimation(
+        panel: NSPanel,
+        startFrame: NSRect,
+        trueFrame: NSRect
+    ) {
+        let snappyFn = CAMediaTimingFunction(controlPoints: 0.2, 0.8, 0.2, 1.0)
+        let isAppearing = panel.alphaValue == 0.0 || !panel.isVisible
+        
+        if isAppearing {
+            panel.alphaValue = 0.0
+            panel.setFrame(startFrame, display: false)
+        }
+        
+        animationGeneration &+= 1
+        let myGeneration = animationGeneration
+        
+        panel.orderFront(nil)
+        
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.25
+            ctx.timingFunction = snappyFn
+            
+            if isAppearing {
+                panel.animator().alphaValue = 1.0
+            }
+            panel.animator().setFrame(trueFrame, display: true)
+            
+        }, completionHandler: { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                guard self.animationGeneration == myGeneration else { return }
+                panel.alphaValue = 1.0
+                panel.setFrame(trueFrame, display: true)
+            }
+        })
     }
 }
 
@@ -247,6 +384,6 @@ struct DockPreviewView: View {
             
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .border(.yellow, width: 1)
+//        .border(.yellow, width: 1)
     }
 }

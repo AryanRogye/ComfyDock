@@ -17,9 +17,8 @@ class AppCoordinator {
     let dockObserver: DockObserver
     let dockPreviewCoordinator: DockPreviewCoordinator
     let permissionService = PermissionService()
+    let audioManager = AudioManager()
     
-    
-
     init() {
         if !permissionService.isAccessibilityEnabled {
             permissionService.requestPermission()
@@ -28,7 +27,7 @@ class AppCoordinator {
             permissionService.requestScreenRecordingPermission()
         }
         
-        self.dockPreviewCoordinator = DockPreviewCoordinator()
+        self.dockPreviewCoordinator = DockPreviewCoordinator(audioManager: audioManager)
         self.dockObserver = DockObserver(windowCore: windowCore)
         
         self.dockPreviewCoordinator.onGetCoreDockRect = { [weak self] in
