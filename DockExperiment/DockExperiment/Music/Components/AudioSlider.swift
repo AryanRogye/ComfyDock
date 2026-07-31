@@ -25,7 +25,7 @@ struct AudioSlider: View {
             // Current time
             Text(formatDuration(audioManager.nowPlayingInfo.positionSeconds))
                 .font(.system(size: 8, weight: .medium, design: .default))
-                .foregroundColor(.primary.opacity(0.7))
+                .foregroundColor(.white.opacity(0.7))
 
             // Progress bar - perfectly centered
             GeometryReader { geometry in
@@ -76,7 +76,7 @@ struct AudioSlider: View {
             // Duration time
             Text(formatDuration(audioManager.nowPlayingInfo.durationSeconds))
                 .font(.system(size: 8, weight: .medium, design: .default))
-                .foregroundColor(.primary.opacity(0.7))
+                .foregroundColor(.white.opacity(0.7))
         }
         .frame(height: trackHeight)
         .shadow(

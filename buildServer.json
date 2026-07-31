@@ -12,8 +12,8 @@
 	"argv": [
 		"/opt/homebrew/bin/xcode-build-server"
 	],
-	"workspace": "/Users/aryanrogye/Code/Projects/ComfyDock/ComfyDock.xcodeproj/project.xcworkspace",
-	"build_root": "/Users/aryanrogye/Library/Developer/Xcode/DerivedData/ComfyDock-hbhymfpkvmwguxelrjailbvxdkuv",
-	"scheme": "ComfyDock",
+	"workspace": "/Users/aryanrogye/Code/Projects/ComfyDock/DockExperiment/DockExperiment.xcodeproj/project.xcworkspace",
+	"build_root": "/Users/aryanrogye/Library/Developer/Xcode/DerivedData/DockExperiment-fiddgpunrnrxwsanqamvqzalexth",
+	"scheme": "DockExperiment",
 	"kind": "xcode"
 }

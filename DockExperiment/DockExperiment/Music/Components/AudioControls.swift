@@ -40,7 +40,7 @@ struct AudioControls: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: forwardBackButtonWidth, height: forwardBackButtonHeight)
-                    .foregroundColor(Color(nsColor: audioManager.nowPlayingInfo.dominantColor))
+                    .foregroundColor(.white)
             }
             .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
             
@@ -52,7 +52,7 @@ struct AudioControls: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconWidth, height: iconHeight)
-                    .foregroundColor(Color(nsColor: audioManager.nowPlayingInfo.dominantColor))
+                    .foregroundColor(.white)
             }
             .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
             
@@ -64,7 +64,7 @@ struct AudioControls: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: forwardBackButtonWidth, height: forwardBackButtonHeight)
-                    .foregroundColor(Color(nsColor: audioManager.nowPlayingInfo.dominantColor))
+                    .foregroundColor(.white)
             }
             .buttonStyle(MusicControlButton(width: buttonWidth, height: buttonHeight, tint: audioManager.nowPlayingInfo.dominantColor)) // Apply custom style
             
