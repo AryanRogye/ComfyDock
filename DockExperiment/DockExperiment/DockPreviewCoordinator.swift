@@ -76,6 +76,27 @@ final class DockPreviewCoordinator {
 
 // MARK: - UI
 extension DockPreviewCoordinator {
+    public func hidePrimedDockPanels() {
+        dockPanel?.orderOut(nil)
+        dockUIPanel?.orderOut(nil)
+    }
+
+    public func showPrimedDockPanels() {
+        dockPanel?.orderFront(nil)
+        dockUIPanel?.orderFront(nil)
+    }
+
+    public func autoHiddenDockDidLoseHover() {
+        if isPointerInsidePanel() {
+            isInTrackingArea = true
+            return
+        }
+
+        isInTrackingArea = false
+        lastExpandedDockRect = nil
+        hidePrimedDockPanels()
+    }
+
     public func setupDockUIPanel() {
         guard let dockRect else { return }
         let dockPanelRect = dockRect.convertToAppKit()

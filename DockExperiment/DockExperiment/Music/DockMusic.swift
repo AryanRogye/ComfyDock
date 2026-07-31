@@ -62,14 +62,14 @@ struct DockMusic: View {
     private func renderSongInformation() -> some View {
         VStack(alignment: .leading, spacing: -1) {
             Text(audioManager.nowPlayingInfo.trackName)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             // Artist name
             Text(audioManager.nowPlayingInfo.artistName)
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.system(size: 9, weight: .medium, design: .rounded))
                 .foregroundColor(.white.opacity(0.8))
                 .lineLimit(1)
                 .truncationMode(.tail)

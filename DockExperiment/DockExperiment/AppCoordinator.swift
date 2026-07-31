@@ -44,18 +44,34 @@ class AppCoordinator {
         
         self.dockObserver.onNoHover = { [weak self] in
             guard let self else { return }
+            if self.dockCoordinator.usesAutoHide {
+                self.dockPreviewCoordinator.autoHiddenDockDidLoseHover()
+                return
+            }
+
             self.dockCoordinator.getCoreDockRect()
             self.dockPreviewCoordinator.dockObserverDidCallNoHover()
         }
         self.dockObserver.onMagnifiedBoundsChanged = { [weak self] rect in
             guard let self else { return }
+            if self.dockCoordinator.usesAutoHide {
+                self.dockPreviewCoordinator.showPrimedDockPanels()
+            }
             self.dockPreviewCoordinator.dockObserverDidReceiveMagnifiedBoundsChanged(rect)
         }
         Task {
+            let startsAutoHidden = await self.dockCoordinator.primeDockTracking()
+            defer {
+                self.dockCoordinator.finishDockTrackingPrime(
+                    restoreAutoHide: startsAutoHidden
+                )
+                if startsAutoHidden {
+                    self.dockPreviewCoordinator.hidePrimedDockPanels()
+                }
+            }
+
             await self.windowCore.loadWindows()
             self.dockObserver.observeDock()
-            try? await Task.sleep(for: .seconds(1))
-            self.dockCoordinator.getCoreDockRect()
         }
     }
 }
