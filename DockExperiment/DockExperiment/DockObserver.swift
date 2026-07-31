@@ -13,7 +13,6 @@ final class DockObserver {
     var dockSubscription: AXListSubscription?
     var onMagnifiedBoundsChanged: ((CGRect) -> Void)?
     var onNoHover: (() -> Void)?
-    var onDockMenuVisibilityChanged: ((Bool) -> Void)?
     private var hoverRefreshTask: Task<Void, Never>?
     
     init(windowCore: WindowCore) {
@@ -46,28 +45,16 @@ final class DockObserver {
             return
         }
         
-        if let sub = AXListSubscription(
-            pid: dockPID,
-            forlist: dockList,
-            application: dockApplication
-        ) {
+        if let sub = AXListSubscription(pid: dockPID, forlist: dockList) {
             dockSubscription = sub
             dockSubscription?.onChange = { [weak self] pid, element, notification in
                 guard let self else { return }
                 
                 print("got notification: \(notification)")
 
-                switch notification as String {
-                case kAXMenuOpenedNotification:
-                    hoverRefreshTask?.cancel()
-                    onDockMenuVisibilityChanged?(true)
-                    return
-                case kAXMenuClosedNotification:
-                    onDockMenuVisibilityChanged?(false)
-                    return
-                case kAXSelectedChildrenChangedNotification:
-                    break
-                default:
+                guard notification as String ==
+                        kAXSelectedChildrenChangedNotification
+                else {
                     return
                 }
 

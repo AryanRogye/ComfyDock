@@ -16,8 +16,6 @@ class AppCoordinator {
     let windowCore = WindowCore()
     let dockObserver: DockObserver
     let dockPreviewCoordinator: DockPreviewCoordinator
-    
-    
     let permissionService = PermissionService()
     
     
@@ -54,11 +52,6 @@ class AppCoordinator {
             guard let self else { return }
             self.dockPreviewCoordinator.dockObserverDidReceiveMagnifiedBoundsChanged(rect)
         }
-        self.dockObserver.onDockMenuVisibilityChanged = { [weak self] isOpen in
-            guard let self else { return }
-            self.dockPreviewCoordinator.dockObserverDidReceiveDockMenuVisibilityChanged(isOpen: isOpen)
-        }
-        
         Task {
             await self.windowCore.loadWindows()
             self.dockObserver.observeDock()

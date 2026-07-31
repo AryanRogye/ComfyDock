@@ -12,11 +12,13 @@ import SwiftUI
 final class DockPreviewCoordinator {
     
     /// Main Panel Holding Content To Preview Border Around Dock
-    var panel: NSPanel!
+    var dockPanel: NSPanel!
     var dockRect: NSRect?
     var baseDockRect: CGRect?
+    private var lastExpandedDockRect: CGRect?
     private var mouseMovedMonitor: Any?
-    private var isDockMenuOpen = false
+    private var dockMenuDismissalTask: Task<Void, Never>?
+    private var isDockMenuInteractionActive = false
     private var isInTrackingArea: Bool = false
     
     // this should trigger
@@ -27,6 +29,7 @@ final class DockPreviewCoordinator {
     }
     
     deinit {
+        dockMenuDismissalTask?.cancel()
         if let mouseMovedMonitor {
             NSEvent.removeMonitor(mouseMovedMonitor)
         }
@@ -34,8 +37,8 @@ final class DockPreviewCoordinator {
     
     private func load(_ rect: CGRect) {
         self.dockRect = rect
-        if panel != nil {
-            self.panel.setFrame(rect.convertToAppKit(), display: true)
+        if dockPanel != nil {
+            self.dockPanel.setFrame(rect.convertToAppKit(), display: true)
         } else {
             setupPanel()
         }
@@ -43,20 +46,20 @@ final class DockPreviewCoordinator {
 
     public func setupPanel() {
         guard let dockRect else { return }
-        panel = FocusablePanel(
+        dockPanel = FocusablePanel(
             contentRect: .zero,
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        panel.setFrame(dockRect.convertToAppKit(), display: true)
-        panel.contentView?.wantsLayer = true
-        panel.acceptsMouseMovedEvents = true
+        dockPanel.setFrame(dockRect.convertToAppKit(), display: true)
+        dockPanel.contentView?.wantsLayer = true
+        dockPanel.acceptsMouseMovedEvents = true
         
         let overlayRaw = CGWindowLevelForKey(.overlayWindow)
-        panel.level = NSWindow.Level(rawValue: Int(overlayRaw))
+        dockPanel.level = NSWindow.Level(rawValue: Int(overlayRaw))
         
-        panel.collectionBehavior = [
+        dockPanel.collectionBehavior = [
             .canJoinAllSpaces,
             .fullScreenAuxiliary,
             .fullScreenDisallowsTiling,
@@ -64,14 +67,14 @@ final class DockPreviewCoordinator {
             .transient
         ]
         
-        panel.isMovableByWindowBackground = false
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.hasShadow = false
-        panel.becomesKeyOnlyIfNeeded = true
-        panel.hidesOnDeactivate = false
-        panel.animationBehavior = .none
-        panel.ignoresMouseEvents = true
+        dockPanel.isMovableByWindowBackground = false
+        dockPanel.backgroundColor = .clear
+        dockPanel.isOpaque = false
+        dockPanel.hasShadow = false
+        dockPanel.becomesKeyOnlyIfNeeded = true
+        dockPanel.hidesOnDeactivate = false
+        dockPanel.animationBehavior = .none
+        dockPanel.ignoresMouseEvents = true
         
         let view = NSHostingView(
             rootView: DockPreviewView()
@@ -80,24 +83,85 @@ final class DockPreviewCoordinator {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
         
-        panel.contentView = view
-        panel.makeKeyAndOrderFront(nil)
+        dockPanel.contentView = view
+        dockPanel.makeKeyAndOrderFront(nil)
         startMouseTracking()
     }
     
     private func startMouseTracking() {
         guard mouseMovedMonitor == nil else { return }
         mouseMovedMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]
-        ) { [weak self] _ in
+            matching: [
+                .mouseMoved,
+                .leftMouseDragged,
+                .rightMouseDragged,
+                .leftMouseDown,
+                .rightMouseDown,
+                .keyDown,
+            ]
+        ) { [weak self] event in
             Task { @MainActor in
                 guard let self else { return }
-                let isInside = self.isPointerInsidePanel()
-                if isInside || self.isDockMenuOpen {
-                    self.isInTrackingArea = true
-                } else if self.isInTrackingArea {
-                    self.collapseToBaseDock()
+
+                switch event.type {
+                case .rightMouseDown:
+                    if self.isPointerInsidePanel() {
+                        self.beginDockMenuInteraction()
+                    } else if self.isDockMenuInteractionActive {
+                        self.scheduleDockMenuInteractionEnd()
+                    }
+                case .leftMouseDown:
+                    if event.modifierFlags.contains(.control),
+                       self.isPointerInsidePanel() {
+                        self.beginDockMenuInteraction()
+                    } else if self.isDockMenuInteractionActive {
+                        self.scheduleDockMenuInteractionEnd()
+                    }
+                case .keyDown:
+                    if self.isDockMenuInteractionActive,
+                       event.keyCode == 36 ||
+                        event.keyCode == 53 ||
+                        event.keyCode == 76 {
+                        self.scheduleDockMenuInteractionEnd()
+                    }
+                default:
+                    self.updatePointerTracking()
                 }
+            }
+        }
+    }
+
+    private func updatePointerTracking() {
+        let isInside = isPointerInsidePanel()
+        if isInside || isDockMenuInteractionActive {
+            isInTrackingArea = true
+        } else if isInTrackingArea {
+            collapseToBaseDock()
+        }
+    }
+
+    private func beginDockMenuInteraction() {
+        dockMenuDismissalTask?.cancel()
+        isDockMenuInteractionActive = true
+        isInTrackingArea = true
+        onGetCoreDockRect?()
+
+        if let lastExpandedDockRect {
+            load(lastExpandedDockRect)
+        }
+    }
+
+    private func scheduleDockMenuInteractionEnd() {
+        dockMenuDismissalTask?.cancel()
+        dockMenuDismissalTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled, let self else { return }
+
+            self.isDockMenuInteractionActive = false
+            if self.isPointerInsidePanel() {
+                self.isInTrackingArea = true
+            } else {
+                self.collapseToBaseDock()
             }
         }
     }
@@ -112,7 +176,7 @@ final class DockPreviewCoordinator {
     }
     
     private func isPointerInsidePanel() -> Bool {
-        panel?.frame.contains(NSEvent.mouseLocation) == true
+        dockPanel?.frame.contains(NSEvent.mouseLocation) == true
     }
 }
 
@@ -127,7 +191,7 @@ extension DockPreviewCoordinator {
     /// If either condition is true, we preserve the current expanded state.
     /// Otherwise, we collapse back to the base (non-magnified) Dock bounds.
     public func dockObserverDidCallNoHover() {
-        if self.isDockMenuOpen || self.isPointerInsidePanel() {
+        if self.isDockMenuInteractionActive || self.isPointerInsidePanel() {
             self.isInTrackingArea = true
         } else {
             self.collapseToBaseDock()
@@ -151,23 +215,9 @@ extension DockPreviewCoordinator {
         } else {
             rectToView = rect
         }
-        
+
+        self.lastExpandedDockRect = rectToView
         self.load(rectToView)
-    }
-    
-    /// Called when a context menu is opened or closed in the observed Dock.
-    ///
-    /// Opening a menu keeps the preview expanded. Once the menu closes, the
-    /// preview collapses only if the pointer is no longer inside the panel.
-    public func dockObserverDidReceiveDockMenuVisibilityChanged(isOpen: Bool) {
-        self.isDockMenuOpen = isOpen
-        
-        if isOpen {
-            self.isInTrackingArea = true
-            self.onGetCoreDockRect?()
-        } else if !self.isPointerInsidePanel() {
-            self.collapseToBaseDock()
-        }
     }
     
     /// Called when the base Dock bounds are found.
@@ -178,7 +228,7 @@ extension DockPreviewCoordinator {
     /// over the Dock, or if the preview panel has not been created yet.
     public func dockCoordinatorDidFindBaseDock(_ rect: CGRect) {
         baseDockRect = rect
-        if !isInTrackingArea || panel == nil {
+        if !isInTrackingArea || dockPanel == nil {
             load(rect)
         }
     }
