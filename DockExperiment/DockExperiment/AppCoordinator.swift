@@ -34,6 +34,10 @@ class AppCoordinator {
             guard let self else { return }
             self.dockCoordinator.getCoreDockRect()
         }
+
+        self.dockPreviewCoordinator.shouldHideWhenTrackingEnds = { [weak self] in
+            self?.dockCoordinator.usesAutoHide == true
+        }
         
         self.dockCoordinator.onDockRectFound = { [weak self] rect in
             guard let self else { return }

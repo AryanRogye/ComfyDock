@@ -23,9 +23,11 @@ final class DockPreviewCoordinator {
     private var dockMenuDismissalTask: Task<Void, Never>?
     private var isDockMenuInteractionActive = false
     private var isInTrackingArea: Bool = false
+    private var isAutoHideDepartureInProgress = false
     
     // this should trigger
     var onGetCoreDockRect: (() -> Void)?
+    var shouldHideWhenTrackingEnds: (() -> Bool)?
     
     private let leadingDockUIPadding: CGFloat = 10
     private let trailingDockUIPadding: CGFloat = 5
@@ -77,11 +79,22 @@ final class DockPreviewCoordinator {
 // MARK: - UI
 extension DockPreviewCoordinator {
     public func hidePrimedDockPanels() {
+        isAutoHideDepartureInProgress = false
         dockPanel?.orderOut(nil)
         dockUIPanel?.orderOut(nil)
     }
 
     public func showPrimedDockPanels() {
+        let needsFrameRestoration =
+            dockUIPanel?.isVisible != true ||
+            isAutoHideDepartureInProgress
+
+        if needsFrameRestoration {
+            animationGeneration &+= 1
+            isAutoHideDepartureInProgress = false
+            restoreBasePanelFrames()
+        }
+
         dockPanel?.orderFront(nil)
         dockUIPanel?.orderFront(nil)
     }
@@ -94,7 +107,7 @@ extension DockPreviewCoordinator {
 
         isInTrackingArea = false
         lastExpandedDockRect = nil
-        hidePrimedDockPanels()
+        animateAutoHiddenDockDeparture()
     }
 
     public func setupDockUIPanel() {
@@ -254,8 +267,27 @@ extension DockPreviewCoordinator {
         if isInside || isDockMenuInteractionActive {
             isInTrackingArea = true
         } else if isInTrackingArea {
-            collapseToBaseDock()
+            if shouldHideWhenTrackingEnds?() == true {
+                autoHiddenDockDidLoseHover()
+            } else {
+                collapseToBaseDock()
+            }
         }
+    }
+
+    private func restoreBasePanelFrames() {
+        guard let baseDockRect else { return }
+
+        let dockPanelRect = baseDockRect.convertToAppKit()
+        guard let screen = NSScreen.screen(containing: dockPanelRect) else {
+            return
+        }
+
+        dockPanel?.setFrame(dockPanelRect, display: false)
+
+        var dockUIRect = createDockUIRect(from: dockPanelRect, in: screen)
+        dockUIRect.size.height = baseDockRect.height
+        dockUIPanel?.setFrame(dockUIRect, display: false)
     }
     
     private func beginDockMenuInteraction() {
@@ -300,6 +332,39 @@ extension DockPreviewCoordinator {
 
 // MARK: - Animation
 extension DockPreviewCoordinator {
+    private func animateAutoHiddenDockDeparture() {
+        guard !isAutoHideDepartureInProgress else { return }
+        guard let panel = dockUIPanel, panel.isVisible else {
+            hidePrimedDockPanels()
+            return
+        }
+
+        let startFrame = panel.frame
+        guard let screen = NSScreen.screen(containing: startFrame) else {
+            hidePrimedDockPanels()
+            return
+        }
+
+        var hiddenFrame = startFrame
+        hiddenFrame.origin.y = screen.frame.minY - startFrame.height
+
+        isAutoHideDepartureInProgress = true
+        animationGeneration &+= 1
+        let myGeneration = animationGeneration
+
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.25
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().setFrame(hiddenFrame, display: true)
+        }, completionHandler: { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                guard self.animationGeneration == myGeneration else { return }
+                self.hidePrimedDockPanels()
+            }
+        })
+    }
+
     private func iOSAnimation(
         panel: NSPanel,
         startFrame: NSRect,
